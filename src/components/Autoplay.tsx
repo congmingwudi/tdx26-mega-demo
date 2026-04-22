@@ -1,5 +1,6 @@
 import VoicePicker from './VoicePicker';
-import type { BrowserVoiceSettings } from '../hooks/useVoiceover';
+import type { VoiceSettings } from '../hooks/useVoiceover';
+
 
 const SPEEDS = [1, 2, 3, 5, 10, 15, 30];
 
@@ -19,11 +20,11 @@ export default function Autoplay({
   interval: number;
   voiceoverEnabled: boolean;
   voiceoverSpeaking: boolean;
-  voiceSettings: BrowserVoiceSettings;
+  voiceSettings: VoiceSettings;
   onToggle: () => void;
   onIntervalChange: (s: number) => void;
   onVoiceoverToggle: () => void;
-  onVoiceSettingsChange: (s: BrowserVoiceSettings) => void;
+  onVoiceSettingsChange: (s: VoiceSettings) => void;
   onVoicePreview: (voiceURI: string) => void;
 }) {
   return (

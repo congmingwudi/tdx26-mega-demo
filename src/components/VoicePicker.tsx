@@ -1,18 +1,24 @@
 import { useState, useRef, useEffect } from 'react';
-import { useAvailableVoices, type BrowserVoiceSettings } from '../hooks/useVoiceover';
+import {
+  fetchElevenLabsVoices,
+  type VoiceSettings,
+  type ElevenLabsVoice,
+} from '../hooks/useVoiceover';
 
 export default function VoicePicker({
   settings,
   onSettingsChange,
   onPreview,
 }: {
-  settings: BrowserVoiceSettings;
-  onSettingsChange: (s: BrowserVoiceSettings) => void;
-  onPreview: (voiceURI: string) => void;
+  settings: VoiceSettings;
+  onSettingsChange: (s: VoiceSettings) => void;
+  onPreview: (voiceId: string) => void;
 }) {
-  const voices = useAvailableVoices();
   const [open, setOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
+  const [voices, setVoices] = useState<ElevenLabsVoice[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   // Close on outside click
   useEffect(() => {
@@ -26,8 +32,18 @@ export default function VoicePicker({
     return () => document.removeEventListener('mousedown', onClick);
   }, [open]);
 
-  const selectedVoice = voices.find(v => v.voiceURI === settings.voiceURI);
-  const displayName = selectedVoice?.name ?? 'Auto';
+  // Load voices when dropdown opens
+  useEffect(() => {
+    if (!open || voices.length > 0) return;
+    setLoading(true);
+    setError('');
+    fetchElevenLabsVoices()
+      .then(v => { setVoices(v); setLoading(false); })
+      .catch(err => { setError(err.message); setLoading(false); });
+  }, [open, voices.length]);
+
+  const selectedVoice = voices.find(v => v.voice_id === settings.voiceId);
+  const displayName = selectedVoice?.name ?? (settings.voiceId ? 'ElevenLabs' : 'Select voice');
 
   return (
     <div ref={panelRef} style={{ position: 'relative' }}>
@@ -40,7 +56,7 @@ export default function VoicePicker({
           padding: '0 10px',
           fontSize: 11,
           gap: 4,
-          maxWidth: 140,
+          maxWidth: 180,
         }}
       >
         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -58,8 +74,8 @@ export default function VoicePicker({
           bottom: '100%',
           left: 0,
           marginBottom: 8,
-          width: 320,
-          maxHeight: 400,
+          width: 360,
+          maxHeight: 480,
           background: '#1a1a1a',
           border: '1px solid rgba(255,255,255,0.1)',
           borderRadius: 10,
@@ -70,37 +86,60 @@ export default function VoicePicker({
           fontSize: 12,
           color: '#eee',
         }}>
-          {/* Voice list */}
+          {/* Header */}
           <div style={{
-            flex: 1, overflowY: 'auto', padding: 4,
-            scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.15) transparent',
+            padding: '10px 14px',
+            borderBottom: '1px solid rgba(255,255,255,0.08)',
+            fontSize: 10,
+            fontWeight: 600,
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            color: 'rgba(255,255,255,0.4)',
+            flexShrink: 0,
           }}>
-            {/* Auto option */}
-            <VoiceRow
-              name="Auto (best available)"
-              detail=""
-              selected={settings.voiceURI === null}
-              onClick={() => {
-                onSettingsChange({ ...settings, voiceURI: null });
-                setOpen(false);
-              }}
-            />
-            {voices.map(v => (
-              <VoiceRow
-                key={v.voiceURI}
-                name={v.name}
-                detail={`${v.lang}${v.localService ? '' : ' · network'}`}
-                selected={v.voiceURI === settings.voiceURI}
-                onClick={() => {
-                  onSettingsChange({ ...settings, voiceURI: v.voiceURI });
-                  onPreview(v.voiceURI);
-                  setOpen(false);
-                }}
-              />
-            ))}
+            ElevenLabs Voices
           </div>
 
-          {/* Rate + Pitch sliders */}
+          {/* Voice list */}
+          <div style={{
+            flex: 1, overflowY: 'auto', padding: 4, minHeight: 100,
+            scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.15) transparent',
+          }}>
+            {loading && (
+              <div style={{ padding: '20px 14px', color: 'rgba(255,255,255,0.4)', textAlign: 'center' }}>
+                Loading voices...
+              </div>
+            )}
+            {error && (
+              <div style={{ padding: '20px 14px', color: '#f87171', textAlign: 'center', fontSize: 11 }}>
+                {error}
+              </div>
+            )}
+            {!loading && !error && voices.map(v => {
+              const gender = v.labels?.gender ?? '';
+              const lang = v.labels?.language ?? v.labels?.accent ?? '';
+              const detail = [gender, lang].filter(Boolean).join(' · ');
+              return (
+                <VoiceRow
+                  key={v.voice_id}
+                  name={v.name}
+                  detail={detail}
+                  selected={settings.voiceId === v.voice_id}
+                  onClick={() => {
+                    onSettingsChange({ ...settings, voiceId: v.voice_id });
+                    onPreview(v.voice_id);
+                    setOpen(false);
+                  }}
+                  onPreviewClick={v.preview_url ? (e) => {
+                    e.stopPropagation();
+                    new Audio(v.preview_url).play();
+                  } : undefined}
+                />
+              );
+            })}
+          </div>
+
+          {/* Stability + Clarity sliders */}
           <div style={{
             padding: '10px 14px',
             borderTop: '1px solid rgba(255,255,255,0.08)',
@@ -108,22 +147,18 @@ export default function VoicePicker({
             gap: 16,
           }}>
             <SliderControl
-              label="Speed"
-              value={settings.rate}
-              min={0.5}
-              max={2.0}
-              step={0.05}
-              format={v => `${v.toFixed(2)}x`}
-              onChange={rate => onSettingsChange({ ...settings, rate })}
+              label="Stability"
+              value={settings.stability}
+              min={0} max={1} step={0.05}
+              format={v => v.toFixed(2)}
+              onChange={stability => onSettingsChange({ ...settings, stability })}
             />
             <SliderControl
-              label="Pitch"
-              value={settings.pitch}
-              min={0.5}
-              max={1.5}
-              step={0.05}
+              label="Clarity"
+              value={settings.similarityBoost}
+              min={0} max={1} step={0.05}
               format={v => v.toFixed(2)}
-              onChange={pitch => onSettingsChange({ ...settings, pitch })}
+              onChange={similarityBoost => onSettingsChange({ ...settings, similarityBoost })}
             />
           </div>
         </div>
@@ -132,8 +167,9 @@ export default function VoicePicker({
   );
 }
 
-function VoiceRow({ name, detail, selected, onClick }: {
+function VoiceRow({ name, detail, selected, onClick, onPreviewClick }: {
   name: string; detail: string; selected: boolean; onClick: () => void;
+  onPreviewClick?: (e: React.MouseEvent) => void;
 }) {
   return (
     <button
@@ -160,6 +196,18 @@ function VoiceRow({ name, detail, selected, onClick }: {
       {detail && (
         <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', flexShrink: 0 }}>
           {detail}
+        </span>
+      )}
+      {onPreviewClick && (
+        <span
+          onClick={onPreviewClick}
+          title="Preview sample"
+          style={{
+            fontSize: 10, color: 'rgba(255,255,255,0.3)', cursor: 'pointer',
+            padding: '2px 4px', borderRadius: 4, flexShrink: 0,
+          }}
+        >
+          &#9654;
         </span>
       )}
     </button>
