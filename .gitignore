@@ -26,8 +26,5 @@ dist-ssr
 # Claude Design export bundle (large zip)
 claude-design/
 
-# Docs used to build the Claude Design project
-docs/
-
 # Rendered slide images (large, sourced from Claude Design export)
 public/rendered/

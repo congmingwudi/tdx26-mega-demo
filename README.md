@@ -25,6 +25,34 @@ This project showcases a workflow that takes a static presentation and transform
    - Packaged the app in a multi-stage Docker image (Node 22 build + nginx serving the static output on port 8080).
    - Pushed the image to Amazon ECR and deployed to AWS App Runner with HTTPS, auto-scaling, and a public URL — all from the CLI without leaving the conversation.
 
+## Solution architecture
+
+The demo walks through a healthcare scenario where a patient's glucose monitor triggers an end-to-end workflow across multiple Salesforce and partner systems.
+
+### System of Context Platform
+
+The full platform view — source systems (EHR, pharmacy, wearables) flow through MuleSoft, Informatica MDM, Data 360, and Tableau Next into Agentforce and Slack. Trusted Services provide the governance foundation.
+
+![System of Context Platform](docs/arch1.png)
+
+### Real-Time Events — Care Agent Flow
+
+Glucose monitor events stream through Data 360's real-time data graph into the Care Agent, which generates Slack alerts, schedules appointments, and updates the EHR via the Patient 360 MCP Server.
+
+![Care Agent Flow](docs/arch2.png)
+
+### Semantic Model — Analytics Agent Flow
+
+Data 360's semantic model grounds Tableau Next dashboards and the Analytics Agent, ensuring agent responses are based on clinically certified metric definitions rather than raw database fields.
+
+![Analytics Agent Flow](docs/arch3.png)
+
+### Data 360 Agent — Segmentation & Activation Flow
+
+The Data 360 Agent composes segment rules from the real-time data graph. Segments feed Marketing Cloud Next for activation-triggered patient outreach.
+
+![Segmentation & Activation Flow](docs/arch4.png)
+
 ## Tech stack
 
 - **Frontend**: React 19, TypeScript, Vite 8, Tailwind CSS v4, React Router v7
