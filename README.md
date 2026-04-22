@@ -1,73 +1,71 @@
-# React + TypeScript + Vite
+# TDX '26 — System of Context Mega Demo
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+An interactive slide deck web app for the TDX '26 Data 360 Campground Super Demo, built entirely with Claude's AI toolchain and deployed to AWS.
 
-Currently, two official plugins are available:
+## What this project demonstrates
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+This project showcases a workflow that takes a static presentation and transforms it into a fully interactive, narrated web application — using **Claude Design** for visual prototyping and **Claude Code** for implementation and deployment.
 
-## React Compiler
+### The build process
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+1. **Presentation to interactive prototype (Claude Design)**
+   - Started with an existing 33-slide PDF presentation covering the TDX '26 System of Context demo — a healthcare scenario showing real-time glucose monitoring, Agentforce agents, MCP servers, and governed patient data across Salesforce, Informatica, MuleSoft, and Tableau.
+   - Uploaded the PDF to [Claude Design](https://claude.ai/design) along with the speaker use case document containing per-slide narrative scripts, stage directions, timing cues, and speaker assignments.
+   - Claude Design merged these inputs into an HTML slide show with a `<deck-stage>` web component (keyboard/tap navigation, auto-scaling, print layout) and a floating narrative overlay panel showing phase, beat, speaker lines, and stage directions for each slide.
+   - Exported the result as a handoff bundle (HTML, CSS, JS, rendered slide images, and a README for coding agents).
 
-## Expanding the ESLint configuration
+2. **Prototype to production React app (Claude Code)**
+   - Brought the Claude Design handoff bundle into Claude Code, which read the README and all source files to understand the prototype's structure.
+   - Recreated the design in React 19 + TypeScript + Tailwind CSS v4, keeping the `<deck-stage>` web component and converting the narrative overlay into a React component with structured TypeScript data.
+   - Added **autoplay controls** with adjustable timing (1s–30s per slide) and play/pause.
+   - Added **text-to-speech voiceover** using the Web Speech API — reads the "say" sections from the narrative data aloud on each slide. Includes a voice picker with all available system voices, speed/pitch sliders, and preview. When voiceover is active, slides auto-advance when speech finishes rather than on a fixed timer.
+   - The voiceover system uses a pluggable provider interface, designed to be swapped to ElevenLabs or another TTS service for higher-quality voices.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+3. **Containerized deployment to AWS (Claude Code)**
+   - Packaged the app in a multi-stage Docker image (Node 22 build + nginx serving the static output on port 8080).
+   - Pushed the image to Amazon ECR and deployed to AWS App Runner with HTTPS, auto-scaling, and a public URL — all from the CLI without leaving the conversation.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Tech stack
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+- **Frontend**: React 19, TypeScript, Vite 8, Tailwind CSS v4, React Router v7
+- **Slide engine**: `<deck-stage>` custom element — keyboard/tap navigation, viewport scaling, localStorage persistence, print layout
+- **Voiceover**: Web Speech API with pluggable provider interface (browser TTS now, ElevenLabs-ready)
+- **Deployment**: Docker (nginx-alpine), Amazon ECR, AWS App Runner
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Running locally
+
+```bash
+npm install
+npm run dev         # http://localhost:5173
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Note: The rendered slide images (`public/rendered/page-*.jpg`) are not checked into git due to size. They are sourced from the Claude Design export bundle and must be present locally for the slides to display. The Docker build copies them from the local filesystem.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Keyboard shortcuts
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+| Key | Action |
+|-----|--------|
+| `←` `→` `Space` `PgUp` `PgDn` | Navigate slides |
+| `Home` / `End` | First / last slide |
+| `1`–`9`, `0` | Jump to slide 1–10 |
+| `R` | Reset to slide 1 |
+| `N` | Toggle narrative overlay |
+| `V` | Toggle voiceover |
+
+## Deploying
+
+```bash
+# Build and push container
+docker build --platform linux/amd64 -t mega-demo .
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin <account-id>.dkr.ecr.us-east-1.amazonaws.com
+docker tag mega-demo:latest <account-id>.dkr.ecr.us-east-1.amazonaws.com/mega-demo:latest
+docker push <account-id>.dkr.ecr.us-east-1.amazonaws.com/mega-demo:latest
+
+# Trigger App Runner redeployment
+aws apprunner start-deployment --service-arn <service-arn> --region us-east-1
 ```
+
+## Tools used
+
+- [Claude Design](https://claude.ai/design) — visual prototyping and handoff bundle generation
+- [Claude Code](https://claude.ai/code) — implementation, iteration, and deployment
