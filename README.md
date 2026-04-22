@@ -18,12 +18,13 @@ This project showcases a workflow that takes a static presentation and transform
    - Brought the Claude Design handoff bundle into Claude Code, which read the README and all source files to understand the prototype's structure.
    - Recreated the design in React 19 + TypeScript + Tailwind CSS v4, keeping the `<deck-stage>` web component and converting the narrative overlay into a React component with structured TypeScript data.
    - Added **autoplay controls** with adjustable timing (1s–30s per slide) and play/pause.
-   - Added **text-to-speech voiceover** using the Web Speech API — reads the "say" sections from the narrative data aloud on each slide. Includes a voice picker with all available system voices, speed/pitch sliders, and preview. When voiceover is active, slides auto-advance when speech finishes rather than on a fixed timer.
-   - The voiceover system uses a pluggable provider interface, designed to be swapped to ElevenLabs or another TTS service for higher-quality voices.
+   - Added **text-to-speech voiceover** powered by **ElevenLabs** — reads the "say" sections from the narrative data aloud on each slide using high-quality AI voices. The default voice is **"Ryan"**, a clone of the presenter's own voice, so the deck narrates itself in his voice. Users can choose from any voice in the ElevenLabs library via the built-in voice picker, with stability and clarity sliders for fine-tuning.
+   - The ElevenLabs API key is kept server-side behind an Express proxy — it never reaches the browser. When voiceover is active, slides auto-advance when speech finishes rather than on a fixed timer.
 
 3. **Containerized deployment to AWS (Claude Code)**
-   - Packaged the app in a multi-stage Docker image (Node 22 build + nginx serving the static output on port 8080).
+   - Packaged the app in a multi-stage Docker image (Node 22 build + Express server proxying the ElevenLabs API and serving the static frontend on port 8080).
    - Pushed the image to Amazon ECR and deployed to AWS App Runner with HTTPS, auto-scaling, and a public URL — all from the CLI without leaving the conversation.
+   - The ElevenLabs API key is passed as an environment variable to the container at deploy time.
 
 ## Solution architecture
 
@@ -57,8 +58,8 @@ The Data 360 Agent composes segment rules from the real-time data graph. Segment
 
 - **Frontend**: React 19, TypeScript, Vite 8, Tailwind CSS v4, React Router v7
 - **Slide engine**: `<deck-stage>` custom element — keyboard/tap navigation, viewport scaling, localStorage persistence, print layout
-- **Voiceover**: Web Speech API with pluggable provider interface (browser TTS now, ElevenLabs-ready)
-- **Deployment**: Docker (nginx-alpine), Amazon ECR, AWS App Runner
+- **Voiceover**: ElevenLabs TTS API via server-side proxy (Express), with presenter's cloned voice as default
+- **Deployment**: Docker (Node 22 + Express), Amazon ECR, AWS App Runner
 
 ## Running locally
 
