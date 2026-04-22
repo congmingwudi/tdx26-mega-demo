@@ -1,0 +1,52 @@
+@import "tailwindcss";
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #000;
+  color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+deck-stage {
+  --scale: 1;
+}
+
+.slide-img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  background: #fff center / contain no-repeat;
+  position: relative;
+}
+
+.slide-img.dark {
+  background-color: #000;
+}
+
+.slide-chrome {
+  position: absolute;
+  bottom: 24px;
+  left: 32px;
+  right: 32px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(0, 0, 0, 0.35);
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.slide-img.dark .slide-chrome {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+@media print {
+  #narrative,
+  #narrative-toggle {
+    display: none !important;
+  }
+}
