@@ -40,11 +40,12 @@ export const SLIDE_LABELS = [
   'Built With · MeshMesh',                          // 39
   'Built With · Cursor',                            // 40
   'Built With · Claude Design + Code',              // 41
+  'Resources',                                      // 42
 ];
 
-export const DARK_SLIDES = new Set([1, 22, 23, 36, 37]);
+export const DARK_SLIDES = new Set([1, 22, 23, 36, 37, 42]);
 
-export const TOTAL_SLIDES = 41;
+export const TOTAL_SLIDES = 42;
 
 export const SPEAKER_NOTES = [
   "TDX '26 Data 360 Campground Mega Demo.",
@@ -88,4 +89,5 @@ export const SPEAKER_NOTES = [
   "MeshMesh designed the patient record page and related Health Cloud objects.",
   "Health Cloud data for the Tableau Next dashboard was generated with Cursor.",
   "This presentation itself is a web app built with Claude Design and Claude Code, narrated by an ElevenLabs voice clone.",
+  "Resources and links — the app, the repos, and the creator.",
 ];

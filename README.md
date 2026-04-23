@@ -1,6 +1,17 @@
 # TDX '26 — System of Context Mega Demo
 
-An interactive slide deck web app for the TDX '26 Data 360 Campground Super Demo, built entirely with Claude's AI toolchain and deployed to AWS.
+An interactive, self-narrating slide deck web app for the TDX '26 Data 360 Campground Super Demo — built with AI tooling and deployed to AWS.
+
+**Watch it live:** [bit.ly/tdx26-mega-demo](https://bit.ly/tdx26-mega-demo)
+
+## Resources
+
+| Resource | Link |
+|----------|------|
+| Live presentation | [bit.ly/tdx26-mega-demo](https://bit.ly/tdx26-mega-demo) |
+| This repo (voice-over app) | [github.com/congmingwudi/tdx26-mega-demo](https://github.com/congmingwudi/tdx26-mega-demo) |
+| Glucose monitor simulator | [github.com/congmingwudi/patient360-glucose-monitor](https://github.com/congmingwudi/patient360-glucose-monitor) |
+| Created by Ryan Cox | [linkedin.com/in/tadryancox](https://linkedin.com/in/tadryancox) |
 
 ## What this project demonstrates
 
@@ -9,7 +20,7 @@ This project showcases a workflow that takes a static presentation and transform
 ### The build process
 
 1. **Presentation to interactive prototype (Claude Design)**
-   - Started with an existing 33-slide PDF presentation covering the TDX '26 System of Context demo — a healthcare scenario showing real-time glucose monitoring, Agentforce agents, MCP servers, and governed patient data across Salesforce, Informatica, MuleSoft, and Tableau.
+   - Started with an existing PDF presentation covering the TDX '26 System of Context demo — a healthcare scenario showing real-time glucose monitoring, Agentforce agents, MCP servers, and governed patient data across Salesforce, Informatica, MuleSoft, and Tableau.
    - Uploaded the PDF to [Claude Design](https://claude.ai/design) along with the speaker use case document containing per-slide narrative scripts, stage directions, timing cues, and speaker assignments.
    - Claude Design merged these inputs into an HTML slide show with a `<deck-stage>` web component (keyboard/tap navigation, auto-scaling, print layout) and a floating narrative overlay panel showing phase, beat, speaker lines, and stage directions for each slide.
    - Exported the result as a handoff bundle (HTML, CSS, JS, rendered slide images, and a README for coding agents).
@@ -17,7 +28,7 @@ This project showcases a workflow that takes a static presentation and transform
 2. **Prototype to production React app (Claude Code)**
    - Brought the Claude Design handoff bundle into Claude Code, which read the README and all source files to understand the prototype's structure.
    - Recreated the design in React 19 + TypeScript + Tailwind CSS v4, keeping the `<deck-stage>` web component and converting the narrative overlay into a React component with structured TypeScript data.
-   - Added **autoplay controls** with adjustable timing (1s–30s per slide) and play/pause.
+   - Added **autoplay controls** with play/pause and mute/unmute.
    - Added **text-to-speech voiceover** powered by **ElevenLabs** — reads the "say" sections from the narrative data aloud on each slide using high-quality AI voices. The default voice is **"Ryan"**, a clone of the presenter's own voice, so the deck narrates itself in his voice. Users can choose from any voice in the ElevenLabs library via the built-in voice picker, with stability and clarity sliders for fine-tuning.
    - The ElevenLabs API key is kept server-side behind an Express proxy — it never reaches the browser. When voiceover is active, slides auto-advance when speech finishes rather than on a fixed timer.
 
@@ -54,11 +65,26 @@ The Data 360 Agent composes segment rules from the real-time data graph. Segment
 
 ![Segmentation & Activation Flow](docs/arch4.png)
 
-## Tech stack
+## Demo tech stack (Salesforce + partners)
+
+The healthcare scenario showcased in the presentation runs on:
+
+- **Salesforce Platform** — Health Cloud Patient 360 Console, Flow Builder, Shield Platform Encryption, Privacy Center
+- **Agentforce** — Care Agent with Agent Script, Agentforce Builder, Agentforce Registry with MCP client support
+- **Data 360** — Real-Time Data Graph, Data Model Objects, Data Governance (PHI/HIPAA tagging), Semantic Model Builder, D360 Agent for segmentation
+- **Slack** — #care-alerts channel, Care Agent conversational actions, Slackbot cross-system queries, human-in-the-loop approval
+- **Tableau Next** — Patient 360 dashboards grounded by semantic models, Analytics & Visualization Agent
+- **Marketing Cloud Next** — Activation-triggered patient outreach flows driven by Data 360 segments
+- **MuleSoft** — Patient 360 MCP Server published on MuleSoft Exchange, providing governed tools (get_patient_record, update_patient_record, etc.) to Agentforce agents
+- **Informatica** — Customer 360 MDM for patient golden record resolution across EHR, Epic, IQVIA, and other source systems
+
+## Presentation app tech stack
+
+The voice-over web app itself is built with:
 
 - **Frontend**: React 19, TypeScript, Vite 8, Tailwind CSS v4, React Router v7
 - **Slide engine**: `<deck-stage>` custom element — keyboard/tap navigation, viewport scaling, localStorage persistence, print layout
-- **Voiceover**: ElevenLabs TTS API via server-side proxy (Express), with presenter's cloned voice as default
+- **Voiceover**: ElevenLabs TTS API via server-side Express proxy, with presenter's cloned voice as default
 - **Deployment**: Docker (Node 22 + Express), Amazon ECR, AWS App Runner
 
 ## Running locally

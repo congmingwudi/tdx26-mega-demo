@@ -1,3 +1,4 @@
+import { useState, useRef, useEffect } from 'react';
 import VoicePicker from './VoicePicker';
 import type { VoiceSettings } from '../hooks/useVoiceover';
 
@@ -9,22 +10,30 @@ export default function Autoplay({
   interval,
   speaking,
   voiceSettings,
+  slideIndex,
+  totalSlides,
+  slideLabels,
   onTogglePlay,
   onToggleMute,
   onIntervalChange,
   onVoiceSettingsChange,
   onVoicePreview,
+  onGoToSlide,
 }: {
   playing: boolean;
   muted: boolean;
   interval: number;
   speaking: boolean;
   voiceSettings: VoiceSettings;
+  slideIndex: number;
+  totalSlides: number;
+  slideLabels: string[];
   onTogglePlay: () => void;
   onToggleMute: () => void;
   onIntervalChange: (s: number) => void;
   onVoiceSettingsChange: (s: VoiceSettings) => void;
   onVoicePreview: (voiceId: string) => void;
+  onGoToSlide: (index: number) => void;
 }) {
   return (
     <div
@@ -61,6 +70,16 @@ export default function Autoplay({
           </svg>
         )}
       </button>
+
+      <Divider />
+
+      {/* Slide jump */}
+      <SlideJump
+        slideIndex={slideIndex}
+        totalSlides={totalSlides}
+        slideLabels={slideLabels}
+        onGoToSlide={onGoToSlide}
+      />
 
       <Divider />
 
@@ -129,6 +148,146 @@ export default function Autoplay({
         }}>
           Paced by voice
         </span>
+      )}
+    </div>
+  );
+}
+
+function SlideJump({
+  slideIndex,
+  totalSlides,
+  slideLabels,
+  onGoToSlide,
+}: {
+  slideIndex: number;
+  totalSlides: number;
+  slideLabels: string[];
+  onGoToSlide: (index: number) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const activeRef = useRef<HTMLButtonElement>(null);
+
+  // Close on outside click
+  useEffect(() => {
+    if (!open) return;
+    function onClick(e: MouseEvent) {
+      if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', onClick);
+    return () => document.removeEventListener('mousedown', onClick);
+  }, [open]);
+
+  // Scroll active slide into view when dropdown opens
+  useEffect(() => {
+    if (open && activeRef.current) {
+      activeRef.current.scrollIntoView({ block: 'center' });
+    }
+  }, [open]);
+
+  const pad = (n: number) => String(n).padStart(2, '0');
+
+  return (
+    <div ref={panelRef} style={{ position: 'relative' }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        title="Jump to slide"
+        style={{
+          ...btnStyle,
+          padding: '0 10px',
+          gap: 4,
+          fontSize: 11,
+          minWidth: 52,
+        }}
+      >
+        <span style={{ fontVariantNumeric: 'tabular-nums' }}>
+          {pad(slideIndex + 1)} / {pad(totalSlides)}
+        </span>
+        <svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor" style={{ flexShrink: 0, opacity: 0.5 }}>
+          <path d="M1 3l3 3 3-3" />
+        </svg>
+      </button>
+
+      {open && (
+        <div style={{
+          position: 'absolute',
+          bottom: '100%',
+          left: 0,
+          marginBottom: 8,
+          width: 320,
+          maxHeight: 420,
+          background: '#1a1a1a',
+          border: '1px solid rgba(255,255,255,0.1)',
+          borderRadius: 10,
+          boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          fontSize: 12,
+          color: '#eee',
+        }}>
+          <div style={{
+            padding: '10px 14px',
+            borderBottom: '1px solid rgba(255,255,255,0.08)',
+            fontSize: 10,
+            fontWeight: 600,
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            color: 'rgba(255,255,255,0.4)',
+            flexShrink: 0,
+          }}>
+            Jump to Slide
+          </div>
+          <div style={{
+            flex: 1, overflowY: 'auto', padding: 4,
+            scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.15) transparent',
+          }}>
+            {slideLabels.map((label, i) => {
+              const active = i === slideIndex;
+              return (
+                <button
+                  key={i}
+                  ref={active ? activeRef : undefined}
+                  onClick={() => { onGoToSlide(i); setOpen(false); }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    width: '100%',
+                    padding: '7px 10px',
+                    background: active ? 'rgba(254,147,57,0.12)' : 'transparent',
+                    border: 0,
+                    borderRadius: 6,
+                    color: active ? '#FE9339' : '#ddd',
+                    cursor: 'pointer',
+                    fontSize: 12,
+                    textAlign: 'left',
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  <span style={{
+                    fontVariantNumeric: 'tabular-nums',
+                    fontSize: 10,
+                    color: active ? '#FE9339' : 'rgba(255,255,255,0.35)',
+                    minWidth: 20,
+                    flexShrink: 0,
+                  }}>
+                    {pad(i + 1)}
+                  </span>
+                  <span style={{
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}>
+                    {label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
       )}
     </div>
   );

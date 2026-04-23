@@ -37,8 +37,8 @@ export const NARRATIVE: NarrativeEntry[] = [
     title: "Data 360 Campground · Mega Demo",
     time: "0:00",
     sections: [
-      { label: "Context", kind: "note",
-        text: "This is a interactive presentation with speaker narrative overlay for a TrailblazerDX '26 demo that showcases the full Salesforce Agentic Enterprise Architecture using a healthcare story." }
+      { label: "Say", kind: "say",
+        text: "Welcome to the Data 360 Campground Mega Demo, built for Salesforce TrailblazerDX 2026. This showcase walks through the Agentic Health Enterprise Architecture end to end — from real-time patient data to autonomous care agents. A big thank you to the incredible team who helped bring this to life. Let's get started." }
     ]
   },
 
@@ -448,7 +448,7 @@ export const NARRATIVE: NarrativeEntry[] = [
     time: "7:50",
     sections: [
       { label: "Say", kind: "say",
-        text: "Everything we just walked — one platform, four systems, connected, trusted, governed, understood, activated, acted on. The Agentic Health Enterprise Architecture, end to end." }
+        text: "Everything we just walked through — one platform, four systems, connected, trusted, governed, understood, activated, acted on. The Agentic Health Enterprise Architecture, end to end." }
     ]
   },
 
@@ -460,7 +460,9 @@ export const NARRATIVE: NarrativeEntry[] = [
     time: "8:00",
     sections: [
       { label: "Note", kind: "note",
-        text: "Thank you slide. Pause for applause." }
+        text: "Thank you slide. Pause for applause." },
+      { label: "Say", kind: "say",
+          text: "Thank you for watching! -- and a big thank you to team  who helped make this possible!" }
     ]
   },
 
@@ -472,7 +474,7 @@ export const NARRATIVE: NarrativeEntry[] = [
     time: "8:10",
     sections: [
       { label: "Say", kind: "say",
-        text: "So — how was this demo actually built? Every component you just saw was accelerated by AI tooling. Let's walk through it." }
+        text: "So — how was this demo actually built? Every component you just saw was accelerated by AI tooling -- Let's walk through a bit of the journey." }
     ]
   },
 
@@ -484,7 +486,7 @@ export const NARRATIVE: NarrativeEntry[] = [
     time: "8:20",
     sections: [
       { label: "Say", kind: "say",
-        text: "The glucose monitor simulator — the app that sends real-time readings into the Data 360 Real-Time Data Graph — was built entirely with Claude Code. From WebSocket streaming to the mobile UI, all generated through conversation with an AI coding agent." }
+        text: "The glucose monitor simulator — the app that sends real-time readings into the Data 360 Real-Time Data Graph via the Real-Time Ingestion API — was built and deployed to AWS entirely with Claude Code." }
     ]
   },
 
@@ -496,7 +498,7 @@ export const NARRATIVE: NarrativeEntry[] = [
     time: "8:35",
     sections: [
       { label: "Say", kind: "say",
-        text: "MeshMesh was used to design the patient record page and all related Health Cloud objects in one visual surface — verifying the Data 360 schema before wiring it to the agent. UI design at the speed of thought." }
+        text: "MeshMesh, a Salesforce-aware AI too, was used to design the patient record page and all related Health Cloud objects in one visual surface — verifying the Data 360 schema before wiring it to the agent. UI design at the speed of thought." }
     ]
   },
 
@@ -521,6 +523,18 @@ export const NARRATIVE: NarrativeEntry[] = [
     sections: [
       { label: "Say", kind: "say",
         text: "And finally — what you're watching right now. This presentation is not a recording. It's a live web application built with Claude Design and Claude Code, narrated by an ElevenLabs voice clone of the presenter. The slides, the navigation, the voiceover, the deployment to AWS — all built through conversation with AI. The demo demos itself." }
+    ]
+  },
+
+  // 41 · Slide 42 — Resources
+  {
+    phase: "Resources",
+    beat: "Links",
+    title: "Resources & Links",
+    time: "9:20",
+    sections: [
+      { label: "Say", kind: "say",
+        text: "Here are all the links. You can open this presentation in your own browser, check out the GitHub repos for this voice-over app and the glucose monitor simulator, and find me on LinkedIn. Thanks for watching." }
     ]
   }
 ];

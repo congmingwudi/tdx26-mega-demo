@@ -6,6 +6,7 @@ import Narrative from './Narrative';
 import Autoplay from './Autoplay';
 import { useVoiceover } from '../hooks/useVoiceover';
 import SlideHighlight from './SlideHighlight';
+import SlideLinks from './SlideLinks';
 
 export default function DeckStage() {
   const deckRef = useRef<HTMLElement>(null);
@@ -126,6 +127,7 @@ export default function DeckStage() {
         data-screen-label={`${num} ${label}`}
       >
         {i === slideIndex && <SlideHighlight region={voiceover.highlight} />}
+        {i === slideIndex && <SlideLinks slideIndex={slideIndex} />}
         <div className="slide-chrome">
           <span>{label}</span>
           <span>{num} / {TOTAL_SLIDES}</span>
@@ -153,11 +155,20 @@ export default function DeckStage() {
         interval={interval}
         speaking={voiceover.speaking}
         voiceSettings={voiceover.settings}
+        slideIndex={slideIndex}
+        totalSlides={TOTAL_SLIDES}
+        slideLabels={SLIDE_LABELS}
         onTogglePlay={togglePlay}
         onToggleMute={toggleMute}
         onIntervalChange={setInterval_}
         onVoiceSettingsChange={voiceover.setSettings}
         onVoicePreview={voiceover.preview}
+        onGoToSlide={(i) => {
+          setPlaying(false);
+          voiceover.stop();
+          const deck = deckRef.current as any;
+          if (deck) deck.goTo(i);
+        }}
       />
     </>
   );
