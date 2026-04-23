@@ -11,6 +11,7 @@ An interactive, self-narrating slide deck web app for the TDX '26 Data 360 Campg
 | Live presentation | [bit.ly/tdx26-mega-demo](https://bit.ly/tdx26-mega-demo) |
 | This repo (voice-over app) | [github.com/congmingwudi/tdx26-mega-demo](https://github.com/congmingwudi/tdx26-mega-demo) |
 | Glucose monitor simulator | [github.com/congmingwudi/patient360-glucose-monitor](https://github.com/congmingwudi/patient360-glucose-monitor) |
+| Presentation PDF | [TDX '26 - System of Context Mega Demo (April 2026).pdf](docs/TDX%20'26%20-%20System%20of%20Context%20Mega%20Demo%20(April%202026).pdf) |
 | Created by Ryan Cox | [linkedin.com/in/tadryancox](https://linkedin.com/in/tadryancox) |
 
 ## What this project demonstrates
