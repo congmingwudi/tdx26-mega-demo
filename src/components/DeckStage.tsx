@@ -5,20 +5,23 @@ import { SPEAKER_NOTES } from '../data/slides';
 import Narrative from './Narrative';
 import Autoplay from './Autoplay';
 import { useVoiceover } from '../hooks/useVoiceover';
+import SlideHighlight from './SlideHighlight';
 
 export default function DeckStage() {
   const deckRef = useRef<HTMLElement>(null);
   const [slideIndex, setSlideIndex] = useState(0);
   const [playing, setPlaying] = useState(false);
+  const [muted, setMuted] = useState(false);
   const [interval, setInterval_] = useState(3);
   const voiceover = useVoiceover();
   const playingRef = useRef(false);
   playingRef.current = playing;
+  const mutedRef = useRef(false);
+  mutedRef.current = muted;
 
   useEffect(() => {
     const deck = deckRef.current;
     if (!deck) return;
-
     const handler = (e: Event) => {
       const detail = (e as CustomEvent).detail;
       setSlideIndex(detail.index);
@@ -27,25 +30,31 @@ export default function DeckStage() {
     return () => deck.removeEventListener('slidechange', handler);
   }, []);
 
-  // Speak narrative when slide changes and voiceover is enabled.
-  // Also re-triggers when playing starts so speech-driven advancement kicks in.
-  useEffect(() => {
-    if (!voiceover.enabled) return;
-    voiceover.speakSlide(slideIndex, () => {
-      if (!playingRef.current) return;
-      const deck = deckRef.current as any;
-      if (!deck) return;
-      if (deck.index >= deck.length - 1) {
-        setPlaying(false);
-        return;
-      }
-      deck.next();
-    });
-  }, [slideIndex, voiceover.enabled, playing]); // eslint-disable-line react-hooks/exhaustive-deps
+  const advanceSlide = useCallback(() => {
+    const deck = deckRef.current as any;
+    if (!deck) return;
+    if (deck.index >= deck.length - 1) {
+      setPlaying(false);
+      voiceover.stop();
+      return;
+    }
+    deck.next();
+  }, [voiceover.stop]);
 
-  // Auto-advance slides on a timer (only when voiceover is OFF)
+  // Speak when slide changes while playing and unmuted
   useEffect(() => {
-    if (!playing || voiceover.enabled) return;
+    if (!playing || muted) {
+      voiceover.stop();
+      return;
+    }
+    voiceover.speakSlide(slideIndex, () => {
+      if (playingRef.current && !mutedRef.current) advanceSlide();
+    });
+  }, [slideIndex, playing, muted]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Timer-based advancement when playing + muted
+  useEffect(() => {
+    if (!playing || !muted) return;
     const deck = deckRef.current as any;
     if (!deck) return;
 
@@ -58,17 +67,17 @@ export default function DeckStage() {
     }, interval * 1000);
 
     return () => window.clearInterval(id);
-  }, [playing, interval, voiceover.enabled]);
+  }, [playing, muted, interval]);
 
-  // Stop autoplay + voiceover on manual navigation; V toggles voiceover
+  // Stop on manual navigation
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       const t = e.target as HTMLElement;
       if (t?.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t?.tagName)) return;
       if (e.metaKey || e.ctrlKey || e.altKey) return;
-      if (e.key === 'v' || e.key === 'V') {
+      if (e.key === 'm' || e.key === 'M') {
         e.preventDefault();
-        voiceover.toggle();
+        setMuted(m => !m);
         return;
       }
       if (['ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', ' ', 'Home', 'End'].includes(e.key) || /^[0-9r]$/i.test(e.key)) {
@@ -78,7 +87,7 @@ export default function DeckStage() {
     }
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [voiceover.stop, voiceover.toggle]);
+  }, [voiceover.stop]);
 
   const togglePlay = useCallback(() => {
     setPlaying(p => {
@@ -94,6 +103,16 @@ export default function DeckStage() {
     });
   }, [voiceover.stop]);
 
+  const toggleMute = useCallback(() => {
+    setMuted(m => {
+      if (!m) {
+        // Muting — stop current speech
+        voiceover.stop();
+      }
+      return !m;
+    });
+  }, [voiceover.stop]);
+
   const slides = Array.from({ length: TOTAL_SLIDES }, (_, i) => {
     const num = String(i + 1).padStart(2, '0');
     const label = SLIDE_LABELS[i];
@@ -106,6 +125,7 @@ export default function DeckStage() {
         style={{ backgroundImage: `url("/rendered/page-${num}.jpg")` }}
         data-screen-label={`${num} ${label}`}
       >
+        {i === slideIndex && <SlideHighlight region={voiceover.highlight} />}
         <div className="slide-chrome">
           <span>{label}</span>
           <span>{num} / {TOTAL_SLIDES}</span>
@@ -116,7 +136,6 @@ export default function DeckStage() {
 
   return (
     <>
-      {/* Speaker notes JSON for deck-stage to read */}
       <script
         type="application/json"
         id="speaker-notes"
@@ -130,13 +149,13 @@ export default function DeckStage() {
       <Narrative slideIndex={slideIndex} />
       <Autoplay
         playing={playing}
+        muted={muted}
         interval={interval}
-        voiceoverEnabled={voiceover.enabled}
-        voiceoverSpeaking={voiceover.speaking}
+        speaking={voiceover.speaking}
         voiceSettings={voiceover.settings}
-        onToggle={togglePlay}
+        onTogglePlay={togglePlay}
+        onToggleMute={toggleMute}
         onIntervalChange={setInterval_}
-        onVoiceoverToggle={voiceover.toggle}
         onVoiceSettingsChange={voiceover.setSettings}
         onVoicePreview={voiceover.preview}
       />

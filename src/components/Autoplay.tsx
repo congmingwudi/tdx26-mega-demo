@@ -1,31 +1,30 @@
 import VoicePicker from './VoicePicker';
 import type { VoiceSettings } from '../hooks/useVoiceover';
 
-
 const SPEEDS = [1, 2, 3, 5, 10, 15, 30];
 
 export default function Autoplay({
   playing,
+  muted,
   interval,
-  voiceoverEnabled,
-  voiceoverSpeaking,
+  speaking,
   voiceSettings,
-  onToggle,
+  onTogglePlay,
+  onToggleMute,
   onIntervalChange,
-  onVoiceoverToggle,
   onVoiceSettingsChange,
   onVoicePreview,
 }: {
   playing: boolean;
+  muted: boolean;
   interval: number;
-  voiceoverEnabled: boolean;
-  voiceoverSpeaking: boolean;
+  speaking: boolean;
   voiceSettings: VoiceSettings;
-  onToggle: () => void;
+  onTogglePlay: () => void;
+  onToggleMute: () => void;
   onIntervalChange: (s: number) => void;
-  onVoiceoverToggle: () => void;
   onVoiceSettingsChange: (s: VoiceSettings) => void;
-  onVoicePreview: (voiceURI: string) => void;
+  onVoicePreview: (voiceId: string) => void;
 }) {
   return (
     <div
@@ -50,7 +49,7 @@ export default function Autoplay({
       }}
     >
       {/* Play / Pause */}
-      <button onClick={onToggle} title={playing ? 'Pause' : 'Play'} style={btnStyle}>
+      <button onClick={onTogglePlay} title={playing ? 'Pause' : 'Play'} style={btnStyle}>
         {playing ? (
           <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
             <rect x="3" y="2" width="4" height="12" rx="1" />
@@ -65,35 +64,35 @@ export default function Autoplay({
 
       <Divider />
 
-      {/* Voiceover toggle */}
+      {/* Mute / Unmute */}
       <button
-        onClick={onVoiceoverToggle}
-        title={voiceoverEnabled ? 'Disable voiceover (V)' : 'Enable voiceover (V)'}
+        onClick={onToggleMute}
+        title={muted ? 'Unmute (M)' : 'Mute (M)'}
         style={{
           ...btnStyle,
           padding: '0 10px',
           gap: 5,
           fontSize: 11,
-          color: voiceoverEnabled ? '#FE9339' : 'rgba(255,255,255,0.45)',
-          background: voiceoverEnabled ? 'rgba(254,147,57,0.15)' : 'transparent',
+          color: muted ? 'rgba(255,255,255,0.35)' : (speaking ? '#FE9339' : 'rgba(255,255,255,0.72)'),
+          background: !muted && speaking ? 'rgba(254,147,57,0.15)' : 'transparent',
         }}
       >
         <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M8 2L4 5.5H1.5v5H4L8 14V2z" fill={voiceoverEnabled ? 'currentColor' : 'none'} />
-          {voiceoverEnabled && (
+          <path d="M8 2L4 5.5H1.5v5H4L8 14V2z" fill={muted ? 'none' : 'currentColor'} />
+          {!muted && (
             <>
               <path d="M11 5.5a3.5 3.5 0 010 5" />
               <path d="M13 3.5a6.5 6.5 0 010 9" />
             </>
           )}
-          {!voiceoverEnabled && (
+          {muted && (
             <path d="M11 5.5l4 5M15 5.5l-4 5" />
           )}
         </svg>
-        <span>{voiceoverEnabled ? (voiceoverSpeaking ? 'Speaking…' : 'Voice ON') : 'Voice'}</span>
+        <span>{muted ? 'Muted' : (speaking ? 'Speaking…' : 'Voice')}</span>
       </button>
 
-      {/* Voice picker — always available */}
+      {/* Voice picker */}
       <VoicePicker
         settings={voiceSettings}
         onSettingsChange={onVoiceSettingsChange}
@@ -102,8 +101,8 @@ export default function Autoplay({
 
       <Divider />
 
-      {/* Speed selector — only visible when voiceover is OFF */}
-      {!voiceoverEnabled && SPEEDS.map((s) => (
+      {/* Speed selector — only visible when muted (timer-based) */}
+      {muted && SPEEDS.map((s) => (
         <button
           key={s}
           onClick={() => onIntervalChange(s)}
@@ -120,7 +119,7 @@ export default function Autoplay({
         </button>
       ))}
 
-      {voiceoverEnabled && (
+      {!muted && (
         <span style={{
           padding: '0 10px',
           fontSize: 10,
@@ -128,7 +127,7 @@ export default function Autoplay({
           letterSpacing: '0.06em',
           textTransform: 'uppercase',
         }}>
-          Auto-paced by speech
+          Paced by voice
         </span>
       )}
     </div>

@@ -1,7 +1,24 @@
+// A highlight region on the slide, shown while a segment is spoken.
+// Coordinates are percentages of the 1920x1080 design canvas.
+export interface HighlightRegion {
+  top: number;
+  left: number;
+  width: number;
+  height: number;
+}
+
+// When a "say" section has segments, the text is spoken in parts,
+// each with an optional highlight region shown on the slide.
+export interface SaySegment {
+  text: string;
+  highlight?: HighlightRegion;
+}
+
 export interface NarrativeSection {
   label?: string;
   kind: 'note' | 'say' | 'do' | 'persona';
   text: string;
+  segments?: SaySegment[]; // if present, overrides text for voiceover
 }
 
 export interface NarrativeEntry {
@@ -17,468 +34,493 @@ export const NARRATIVE: NarrativeEntry[] = [
   {
     phase: "Opening",
     beat: "Stage entrance",
-    title: "Data 360 Campground · Super Demo",
+    title: "Data 360 Campground · Mega Demo",
     time: "0:00",
     sections: [
       { label: "Context", kind: "note",
-        text: "Nine presenters credited. Desiree opens and introduces the arc: 'Nirvana first, then plumbing.' TDX technical audience — they care about the plumbing more than the business story." }
+        text: "This is a interactive presentation with speaker narrative overlay for a TrailblazerDX '26 demo that showcases the full Salesforce Agentic Enterprise Architecture using a healthcare story." }
     ]
   },
 
-  // 1 · Page 2 — Agentic Health Enterprise Architecture
+  // 1 · Page 2 — Architecture overview
   {
     phase: "Framing",
     beat: "The stack",
-    title: "One platform, four systems",
+    title: "Salesforce Agentic Enterprise Architecture",
     time: "0:15",
     sections: [
       { label: "Frame", kind: "say",
-        text: "System of engagement. System of agency. System of work. System of context. Every layer is open — any agent, any data lake, any app — unified by the trust layer." },
+        text: "Salesforce has the platforms, unified on one architecture, to bring the Agentic Enterprise to life." },
       { label: "Direction", kind: "note",
-        text: "Orient the audience on the stack before we dive into the healthcare demo. The four systems are the organizing metaphor for the entire narrative." }
+        text: "Orient the audience on the stack before we dive into the healthcare demo." }
     ]
   },
 
-  // 2 · Page 3 — AI requires data / trapped
+  // 2 · Page 3 — Architecture · Context
+  {
+    phase: "Framing",
+    beat: "Context layer",
+    title: "System of Context — Data 360",
+    time: "0:20",
+    sections: [
+      { label: "Say", kind: "say",
+        text: "At the foundation is our system of context, powered by Data 360, where every signal across the enterprise is turned into action for agents." }
+    ]
+  },
+
+  // 3 · Page 4 — Architecture · Work
+  {
+    phase: "Framing",
+    beat: "Work layer",
+    title: "System of Work — Customer 360",
+    time: "0:30",
+    sections: [
+      { label: "Say", kind: "say",
+        text: "Then, there's our system of work -- the core Salesforce platform --27 years of proven workflows running your business." }
+    ]
+  },
+
+  // 4 · Page 5 — Architecture · Agency
+  {
+    phase: "Framing",
+    beat: "Agency layer",
+    title: "System of Agency — Agentforce",
+    time: "0:40",
+    sections: [
+      { label: "Say", kind: "say",
+        text: "Above that is our system of agency -- Agentforce -- where you can build, deploy, observe and test agents at scale." }
+    ]
+  },
+
+  // 5 · Page 6 — Architecture · Engagement
+  {
+    phase: "Framing",
+    beat: "Engagement layer",
+    title: "System of Engagement — Slack",
+    time: "0:50",
+    sections: [
+      { label: "Say", kind: "say",
+        text: "And it all comes together in our system of engagement -- Slack -- where all your humans, agents, apps, and data are united. It's open at every layer, integrating into every system across your business --- Let's dive in." }
+    ]
+  },
+
+  // 6 · Slide 7 — Data Trapped
   {
     phase: "Framing",
     beat: "The problem",
     title: "Why context, why now",
-    time: "0:45",
+    time: "0:55",
     sections: [
       { label: "Say", kind: "say",
-        text: "AI requires data — but most of it sits trapped. 80% goes unused. 30% of the world's data comes from healthcare: patient records, claims, wearables, physician notes, research. None of it speaks to each other." },
-      { label: "Note", kind: "note",
-        text: "Sets up healthcare as the story lens. Healthcare is the domain, not a product constraint — same pattern applies to FSI, retail, manufacturing." }
+        text: "AI requires reliable data — but most of it sits trapped. 80% goes unused. 30% of the world's data comes from healthcare: patient records, claims, wearables, physician notes, research — and none of it speaks to each other." }
     ]
   },
 
-  // 3 · Page 4 — Trusted Enterprise Context pillars
+  // 7 · Slide 8 — Pillars
   {
     phase: "Framing",
     beat: "The promise",
     title: "Trusted Enterprise Context",
-    time: "1:00",
+    time: "1:10",
     sections: [
-      { label: "Five pillars", kind: "do",
-        text: "One Source of Truth · Connected Systems · Trusted Data Quality, Privacy, Governance · Data Activated Across Enterprise · Enterprise-Wide Metadata Catalog." },
       { label: "Say", kind: "say",
-        text: "Turning data into context for activation. This is what we mean by the System of Context — and this demo is going to show it end to end, in healthcare, in under 10 minutes." }
+        text: "Turning data into context for activation. This is what we mean by the System of Context — and this demo is going to show it end to end, in healthcare." }
     ]
   },
 
-  // 4 · Page 5 — System of Context platform architecture
+  // 8 · Slide 9 — System of Context platform
   {
     phase: "Framing",
     beat: "Platform map",
     title: "System of Context — the platform",
-    time: "1:30",
+    time: "1:25",
     sections: [
       { label: "Say", kind: "say",
-        text: "This is the platform we're standing on for the rest of the demo. Connect, trust, understand, activate, act, govern — one loop, one source of truth." },
-      { label: "Direction", kind: "note",
-        text: "Keep it to 30 seconds. Point broadly, not component by component. Detail comes later." }
+        text: "This is the platform we're standing on for this system of context demo. Connect, trust, understand, activate, act, govern — one loop, one source of truth." }
     ]
   },
 
-  // 5 · Page 6 — Real-Time Events → Agent → Slack/MCP
+  // 9 · Slide 10 — RT Events → Agent → Slack
   {
     phase: "Framing",
     beat: "Flow · real-time",
     title: "Real-time events → Agentforce → Slack & MCP",
-    time: "1:50",
+    time: "1:40",
     sections: [
-      { label: "Do", kind: "do",
-        text: "Walk the flow: glucose event → MuleSoft → Data 360 real-time data graph → Agentforce Care Agent → Slack alert · MCP action against Patient 360 MCP server." },
       { label: "Say", kind: "say",
-        text: "Here's the first flow you're going to see end to end — a real-time event landing in Slack and triggering a governed action back into the EHR through an MCP server." }
+        text: "Here's the first flow — a real-time glucose event flowing through Data 360 to the Care Agent, which alerts care teams in Slack and updates the EHR through an MCP server." }
     ]
   },
 
-  // 6 · Page 7 — Semantic Model → Tableau + Analytics Agent
+  // 10 · Slide 11 — Document AI
+  {
+    phase: "Framing",
+    beat: "Flow · unstructured",
+    title: "Document AI — unstructured to structured",
+    time: "1:55",
+    sections: [
+      { label: "Say", kind: "say",
+        text: "Document AI extracts structured data from unstructured clinical documents — discharge summaries, physician notes — and maps them directly into Data Cloud fields. This is how the system knows what's in a PDF without anyone reading it." }
+    ]
+  },
+
+  // 11 · Slide 12 — Semantic Model → Tableau
   {
     phase: "Framing",
     beat: "Flow · analytics",
     title: "Semantic Model → Tableau & Analytics Agent",
-    time: "2:00",
+    time: "2:05",
     sections: [
       { label: "Say", kind: "say",
-        text: "Second flow — analytics grounding. The semantic model is the thing that makes Tableau Next and the Analytics Agent trustworthy. When the agent reasons, it's against a model the clinical team certified — not raw database fields." }
+        text: "The semantic model grounds Tableau Next and the Analytics Agent. When the agent reasons, it's against metrics the clinical team certified — not raw database fields." }
     ]
   },
 
-  // 7 · Page 8 — Data 360 Agent → Segment Rules
+  // 12 · Slide 13 — Data 360 Agent → Segment
   {
     phase: "Framing",
     beat: "Flow · activation",
     title: "Data 360 Agent → Segment rules",
-    time: "2:10",
+    time: "2:15",
     sections: [
       { label: "Say", kind: "say",
-        text: "Third flow — activation. The Data 360 Agent generates segment rules from the real-time graph. Segments feed Marketing Cloud Next. Patient outreach is a downstream trigger, not a separate pipeline." }
+        text: "The Data 360 Agent generates segment rules from the real-time graph. Segments feed Marketing Cloud Next. Patient outreach is a downstream trigger, not a separate pipeline." }
     ]
   },
 
-  // 8 · Page 9 — Document AI (section divider)
+  // 13 · Slide 14 — Maria — Informatica Profile
   {
-    phase: "Framing",
-    beat: "Flow · unstructured",
-    title: "Document AI — unstructured, governed",
-    time: "2:20",
+    phase: "Demo",
+    beat: "Meet Maria",
+    title: "Patient golden record in Informatica",
+    time: "2:30",
     sections: [
-      { label: "Context", kind: "note",
-        text: "Section divider. The 'physician notes become queryable fields' callback — sets up why the outreach in the nirvana beat was so specific." }
-    ]
-  },
-
-  // 9 · Page 10 — Informatica C360 · Maria Gonzalez patient profile
-  {
-    phase: "PHASE 1 · Beat 0",
-    beat: "Live hook",
-    title: "Meet Maria — before anyone speaks",
-    time: "2:30 · 1 min",
-    sections: [
-      { label: "Screen", kind: "persona", text: "Informatica Customer 360 · Maria Gonzalez · Patient Details" },
-      { label: "Context", kind: "note",
-        text: "Informatica C360 is open on the demo laptop before anyone arrives. Maria's patient profile visible — demographics, contact info, general info, associated device (Accu-Chek Guide Glucose Meter)." },
       { label: "Say", kind: "say",
-        text: "Before I show you anything, I want to tell you about Maria. She's in her forties, diabetic, and she wears a continuous glucose monitor. What you're looking at is the single patient record the care team works from." },
-      { label: "Direction", kind: "note",
-        text: "Let the audience read the screen for a few seconds. The vitals make Maria feel like a real person before any product is mentioned." }
+        text: "Meet Maria Gonzalez. She's in her forties, diabetic, and she wears a continuous glucose monitor. What you're looking at is her golden record in Informatica — the single source of truth the care team works from." }
     ]
   },
 
-  // 10 · Page 11 — Informatica Source Records · three Marias
+  // 14 · Slide 15 — Three Marias — Source Records
   {
-    phase: "PHASE 2 · Plumbing 2",
+    phase: "Demo",
     beat: "Informatica MDM",
     title: "Three Marias. Which one gets the bill?",
-    time: "3:00",
+    time: "2:50",
     sections: [
-      { label: "Persona", kind: "persona", text: "Speakers: Rudra Ray & Rameez Ghous" },
-      { label: "Do", kind: "do",
-        text: "Click Source Records tab. Five source records: Informatica C360, EHR, Default, IQVIA, Epic. Same person — spellings, dates of birth, IDs all differ." },
       { label: "Say", kind: "say",
-        text: "Same person — three spellings, two dates of birth, five different IDs across the health system. Which Maria gets the bill? If a physician pulls the wrong record and misses a medication she's on, what happens? This is every healthcare org running disconnected systems for ten years." },
-      { label: "Direction", kind: "note",
-        text: "Pause. Let the billing and safety stakes land before you show the fix." }
+        text: "Same person — three spellings, two dates of birth, five different IDs across the health system. Which Maria gets the bill? Informatica MDM resolved these into one golden record — authoritative, governed, auditable." }
     ]
   },
 
-  // 11 · Page 12 — Patient 360 Console (unified view)
+  // 15 · Slide 16 — Patient 360 Console
   {
-    phase: "PHASE 2 · Plumbing 3",
+    phase: "Demo",
     beat: "Unified profile",
-    title: "One Maria. Governed. Auditable.",
-    time: "3:30",
+    title: "Complete patient view in Health Cloud",
+    time: "3:10",
     sections: [
-      { label: "Do", kind: "do",
-        text: "Switch to Patient 360 Console. Single unified profile: clinical encounters, clinical alerts, health conditions, care programs, activity timeline." },
       { label: "Say", kind: "say",
-        text: "Informatica MDM resolved those five records into one golden record — authoritative, governed, auditable. Billing goes to one Maria. Full medication history in one place. Every field is encrypted at rest. Every data change is tracked in an immutable audit trail." }
+        text: "The Patient 360 Console in Health Cloud — clinical encounters, alerts, health conditions, care programs, activity timeline. Everything stitched together from every source system into one view." }
     ]
   },
 
-  // 12 · Page 13 — JSON Preview · GlucoseMonitorEvent live record
+  // 16 · Slide 17 — Real-Time Data Graph
   {
-    phase: "PHASE 1 · Beat 0",
+    phase: "Demo",
     beat: "Live event",
-    title: "The glucose event, as a DMO record",
-    time: "3:45",
+    title: "Glucose event in the Real-Time Data Graph",
+    time: "3:25",
     sections: [
-      { label: "Do", kind: "do",
-        text: "Open JSON Preview tab. Real-time view: ON. Point to the GlucoseMonitorEvent array — bloodSugarReading 236, level High, timestamp 2026-04-10." },
       { label: "Say", kind: "say",
-        text: "This is the raw real-time event as it hits the Data Graph. Patient ID, blood sugar reading 236, level High. Not a batch export — this is what the agent sees, structured, the moment the monitor emits it." }
+        text: "Maria's glucose monitor sends a high reading — 236 milligrams per deciliter. It arrives in the Data 360 Real-Time Data Graph in under 200 milliseconds. Not a batch export — this is what the agent sees, structured, the moment the monitor emits it." }
     ]
   },
 
-  // 13 · Page 14 — Flow Builder · TDX — GlucoseMonitorEvent V7
+  // 17 · Slide 18 — GlucoseMonitorEvent Flow
   {
-    phase: "PHASE 1 · Beat 0",
+    phase: "Demo",
     beat: "Event trigger",
-    title: "Event-triggered flow · level High or Low",
-    time: "4:00",
+    title: "Automation flow fires on glucose event",
+    time: "3:40",
     sections: [
-      { label: "Do", kind: "do",
-        text: "Switch to Flow Builder. TDX — GlucoseMonitorEvent V7. Automation Event-Triggered Flow · Handle GlucoseMonitorEvent subflow. Condition: level contains High OR level contains Low." },
       { label: "Say", kind: "say",
-        text: "Here's the trigger. An event-triggered flow bound to the GlucoseMonitorEvent DMO. The condition fires on High or Low readings — out-of-range is what we care about." }
+        text: "An event-triggered automation flow bound to the GlucoseMonitorEvent data model object. The condition fires on high or low readings — out-of-range is what we care about." }
     ]
   },
 
-  // 14 · Page 15 — Handle GlucoseMonitorEvent V16 debug run
+  // 18 · Slide 19 — Glucose Event → Care Agent
   {
-    phase: "PHASE 1 · Beat 0",
+    phase: "Demo",
     beat: "Care Agent handoff",
-    title: "Send Glucose Event to Care Agent",
-    time: "4:15",
+    title: "Flow passes event to the Care Agent",
+    time: "3:50",
     sections: [
-      { label: "Do", kind: "do",
-        text: "Handle GlucoseMonitorEvent V16. Debug run completed. Autolaunched Flow → Send Glucose Event to Care Agent action → End. Fault path → Analyze & Send Glucose Event Slack Message subflow." },
       { label: "Say", kind: "say",
-        text: "The flow hands the event off to the Care Agent. The agent decides what to do — schedule, alert, escalate. If it faults, we still make sure a Slack message goes out. Never silent." }
+        text: "The flow hands the glucose event off to the Care Agent with full patient context. The agent decides what to do — schedule, alert, escalate. If it faults, a Slack message still goes out. Never silent." }
     ]
   },
 
-  // 15 · Page 16 — Analyze Glucose Event & Create Slack Message V2
+  // 19 · Slide 20 — Care Agent · Autonomous Assistant
   {
-    phase: "PHASE 1 · Beat 0",
-    beat: "Slack composer",
-    title: "Analyze · compose · alert",
-    time: "4:30",
-    sections: [
-      { label: "Do", kind: "do",
-        text: "Analyze Glucose Event & Create Slack Message V2. Sequence: Get Slack Channel ID → Generate Glucose Risk Alert Slack Message → Get Person Account → Get Condition Code → Create Patient Clinical Alert." },
-      { label: "Say", kind: "say",
-        text: "The subflow composes the Slack message and — in parallel — creates a Patient Clinical Alert record on the person account. Same event, two surfaces: conversation and record." }
-    ]
-  },
-
-  // 16 · Page 17 — Agentforce Builder · Care Agent · Care Management topic
-  {
-    phase: "PHASE 2 · Plumbing 1",
+    phase: "Demo",
     beat: "Agentforce",
-    title: "Care Agent — topics, instructions, actions",
-    time: "4:45",
+    title: "Care Agent — autonomous assistant",
+    time: "4:05",
     sections: [
-      { label: "Do", kind: "do",
-        text: "Agentforce Builder. Care Agent Version 10. Care Management topic. Instructions: on Glucose Monitor Event, prioritize this topic and schedule follow-up. Actions for reasoning: Analyze Glucose Event & Create Slack Message, Schedule Patient Appointment, update_patient_record (patient360mcp)." },
       { label: "Say", kind: "say",
-        text: "The Care Agent is a declarative bundle of topics, instructions, and actions. 'If Glucose Monitor Event, set patientId, schedule follow-up, send Slack.' No prompts-as-code. The update_patient_record action is served by the MCP server — same agent, external tool." }
+        text: "The Care Agent, configured with Agent Script, acts as an autonomous assistant to medical staff — handling glucose events, proposing care plans sent to Slack, scheduling follow-up appointments, and updating patient records in EMR systems via MCP tools." }
     ]
   },
 
-  // 17 · Page 18 — Slack · #care-alerts · High-Risk Glucose Alert
+  // 20 · Slide 21 — Agent Action → Slack Message
   {
-    phase: "PHASE 1 · Beat 1",
+    phase: "Demo",
+    beat: "Slack composer",
+    title: "Agent generates clinical Slack message",
+    time: "4:20",
+    sections: [
+      { label: "Say", kind: "say",
+        text: "An agent action feeds into a prompt template that generates a detailed clinical alert for Slack — patient context, glucose trends, and recommended next steps. Same event, two surfaces: the conversation and the medical record." }
+    ]
+  },
+
+  // 21 · Slide 22 — Slack · #care-alerts
+  {
+    phase: "Demo",
     beat: "Nirvana — alert",
-    title: "Dr. Chen opens Slack. The alert is there.",
-    time: "5:00 · 1 min",
+    title: "The alert lands in Slack",
+    time: "4:35",
     sections: [
-      { label: "Persona", kind: "persona", text: "Dr. Chen — Care Coordinator" },
-      { label: "Do", kind: "do",
-        text: "Slack · #care-alerts. High-Risk Glucose Alert posted by Care Agent app. Latest reading 236 mg/dL, level High, 48-hour trend, dangerous spikes, no recent appointments. Recommended clinical next steps inline." },
       { label: "Say", kind: "say",
-        text: "Dr. Chen opens Slack. The alert is already there. Maria Gonzalez. Latest reading 236. 48-hour trend of dangerous spikes. No appointments in 90 days. She didn't go looking — the system found her and brought the right information to where she already works." },
-      { label: "Direction", kind: "note",
-        text: "Don't scroll. Let the audience read the alert. The clinical context paragraph is the proof point." }
+        text: "Dr. Chen opens Slack. The alert is already there. Maria Gonzalez, latest reading 236, 48-hour trend of dangerous spikes, no appointments in 90 days. She didn't go looking — the system found her and brought the right information to where she already works." }
     ]
   },
 
-  // 18 · Page 19 — Slack thread · Care Agent confirm appointment
+  // 22 · Slide 23 — Slack · Approve Care Plan
   {
-    phase: "PHASE 1 · Beat 1",
+    phase: "Demo",
     beat: "Nirvana — action",
-    title: "Human in the loop · one click",
-    time: "5:30",
+    title: "Human in the loop — one click",
+    time: "4:55",
     sections: [
-      { label: "Do", kind: "do",
-        text: "@Care Agent schedule follow-up appointment — thread opens. Care Agent proposes: reason, preferred date April 13. Cancel / Confirm." },
       { label: "Say", kind: "say",
-        text: "Jennifer asks the Care Agent to schedule. The agent proposes — reason pre-filled from the alert, preferred date inferred from the urgency. She clicks Confirm. One action, fully auditable." },
-      { label: "Proof point", kind: "note",
-        text: "The agent drafts. The human decides. Say it." }
+        text: "The care team asks the Care Agent to schedule a follow-up. The agent proposes — reason pre-filled from the alert, preferred date inferred from the urgency. One click to confirm. The agent drafts, the human decides." }
     ]
   },
 
-  // 19 · Page 20 — Slack DM · Slackbot appointments query
+  // 23 · Slide 24 — Slackbot → Health Cloud
   {
-    phase: "PHASE 1 · Beat 1",
+    phase: "Demo",
     beat: "Cross-system query",
-    title: "Queried Salesforce. Appointment scheduled.",
-    time: "5:45",
+    title: "Verify from Slack, launch into Health Cloud",
+    time: "5:10",
     sections: [
-      { label: "Do", kind: "do",
-        text: "Slack DM: 'show scheduled appointments for Maria Gonzalez.' Slackbot replies: queried Salesforce. Glucose Follow-Up: Maria Gonzalez · Mon Apr 13 · 10–10:30 AM MDT. Contact card attached with Open in Salesforce." },
       { label: "Say", kind: "say",
-        text: "Jennifer can verify from Slack — no context switch. The bot queries Salesforce and confirms the appointment is on the books. One click opens the record in Salesforce." }
+        text: "The care team can verify directly from Slack — no context switch. Slackbot queries Salesforce and confirms the appointment is on the books. One click opens the full record in Health Cloud." }
     ]
   },
 
-  // 20 · Page 21 — Patient 360 Console · alerts + follow-up
+  // 24 · Slide 25 — Patient Record · Alerts + Appointments
   {
-    phase: "PHASE 1 · Beat 1",
+    phase: "Demo",
     beat: "Closed loop",
     title: "The loop closes in the record",
-    time: "6:00",
+    time: "5:25",
     sections: [
-      { label: "Do", kind: "do",
-        text: "Return to the Patient 360 Console. Clinical Alerts now shows three Diabetes Type II glucose alerts. Activity Timeline shows: Glucose Follow-Up: Maria Gonzalez — upcoming Apr 13." },
       { label: "Say", kind: "say",
-        text: "Back on Maria's record. The new alerts landed in Clinical Alerts. The appointment is on the timeline. From wearable spike to scheduled follow-up — in under 2 minutes, without anyone leaving Slack." },
-      { label: "Direction", kind: "note",
-        text: "This is the nirvana payoff. Pause. Let it land." }
+        text: "Back on Maria's record. The glucose alerts landed in Clinical Alerts. The appointment is on the timeline. From wearable spike to scheduled follow-up — in under 2 minutes, without anyone leaving Slack." }
     ]
   },
 
-  // 21 · Page 22 — MuleSoft Exchange · Patient 360 MCP Server
+  // 25 · Slide 26 — Care Agent → MCP Tools
   {
-    phase: "PHASE 2 · Plumbing 1",
-    beat: "MuleSoft + MCP",
-    title: "APIs as MCP servers",
-    time: "6:15",
+    phase: "Plumbing",
+    beat: "MCP tools",
+    title: "Agent updates EMR through MCP",
+    time: "5:40",
     sections: [
-      { label: "Persona", kind: "persona", text: "Speaker: Sue Siao" },
-      { label: "Do", kind: "do",
-        text: "MuleSoft Exchange · Agents & Tools. Patient 360 MCP Server, published by Sue Siao." },
       { label: "Say", kind: "say",
-        text: "We don't just expose APIs anymore. We publish them as MCP servers — governed, versioned, discoverable. This one wraps the EHR. One catalog for every agent in the org." }
+        text: "The Care Agent updates patient records in external EMR systems through MCP tools. Built in MuleSoft, published to the Agentforce catalog — governed, versioned, discoverable." }
     ]
   },
 
-  // 22 · Page 23 — Agentforce Registry · patient360mcp
+  // 26 · Slide 27 — Agentforce Registry · MCP
   {
-    phase: "PHASE 2 · Plumbing 1",
+    phase: "Plumbing",
     beat: "Agentforce registry",
-    title: "5 tools, registered, active",
-    time: "6:30",
+    title: "MCP tools as native agent actions",
+    time: "5:55",
     sections: [
-      { label: "Do", kind: "do",
-        text: "Setup · Agentforce Registry · patient360mcp. Connection Active. Tools (5): get_patient_record · get_medication_list · flag_clinical_alert · get_glucose_readings · update_patient_record. update_patient_record input schema visible." },
       { label: "Say", kind: "say",
-        text: "The agent sees these as actions. Five tools, with schemas. Agent-to-system, securely, through MCP. Going GA at TDX this week." },
-      { label: "News value", kind: "note",
-        text: "MCP GA callout — that's the TDX news." }
+        text: "The Agentforce Registry surfaces MCP tools as native agent actions. Five tools, with schemas. Agent-to-system, securely, through Agentforce MCP client support." }
     ]
   },
 
-  // 23 · Page 24 — Patient 360 MCP Server documentation
+  // 27 · Slide 28 — MuleSoft MCP Server · Docs
   {
-    phase: "PHASE 2 · Plumbing 1",
+    phase: "Plumbing",
     beat: "Self-documenting",
-    title: "Bridge · AI ↔ EHR",
-    time: "6:45",
+    title: "Secure, governed, monitored MCP tools",
+    time: "6:05",
     sections: [
       { label: "Say", kind: "say",
-        text: "Every tool is self-documenting. get_patient_record returns demographics, conditions, medications, allergies, vitals, care team, insurance — the full clinical view, accessible to any MCP-capable agent, one call." }
+        text: "MuleSoft provides secure, governed, and monitored MCP tools. Every tool is self-documenting — get_patient_record returns demographics, conditions, medications, vitals, care team — the full clinical view, accessible to any MCP-capable agent." }
     ]
   },
 
-  // 24 · Page 25 — P360 Overview dashboard + Analytics & Visualization agent
+  // 28 · Slide 29 — Tableau Next + Analytics Agent
   {
-    phase: "PHASE 2 · Plumbing 4a",
+    phase: "Plumbing",
     beat: "Tableau + agent",
-    title: "Grounded analytics — CSAT by category",
-    time: "7:00 · 1 min",
+    title: "Dashboard and Analytics Agent",
+    time: "6:20",
     sections: [
-      { label: "Persona", kind: "persona", text: "Speakers: John Demby & Caitlyn Anderson" },
-      { label: "Do", kind: "do",
-        text: "P360 Overview dashboard. Analytics & Visualization agent in side panel: 'show a graph of CSAT by category.' Agent returns Home Health 3.6, Ambulatory 2.3, with cited Patient 360 semantic model." },
       { label: "Say", kind: "say",
-        text: "Ask it in natural language — 'CSAT by category.' The agent grounds against the Patient 360 semantic model and returns a chart the clinical team certified. Not a hallucination. Not a database field name. A metric with a definition." }
+        text: "Ask it in natural language — CSAT by category. The Analytics Agent grounds against the Patient 360 semantic model and returns a chart the clinical team certified. Not a hallucination — a metric with a semantic definition." }
     ]
   },
 
-  // 25 · Page 26 — Semantic Model Builder · Patient 360
+  // 29 · Slide 30 — Semantic Model Builder
   {
-    phase: "PHASE 2 · Plumbing 4a",
+    phase: "Plumbing",
     beat: "Semantic model",
-    title: "Metrics defined once, governed everywhere",
-    time: "7:30",
+    title: "Governed metrics, defined once",
+    time: "6:35",
     sections: [
-      { label: "Do", kind: "do",
-        text: "Semantic Model Builder · Patient 360. Objects: Clinical Encounter, Account, Account Contact. Metrics: % Emergency Admissions, Encounter Duration, Finished Clinical Encounters, No-Show Rate, Patient CSAT, Total Clinical Encounters." },
       { label: "Say", kind: "say",
-        text: "This is where that definition lives. Six governed metrics, three data objects, one model. Tableau uses it. The agent uses it. The dashboards use it. Change a definition once — every surface updates." }
+        text: "Six governed metrics, three data objects, one semantic model. Tableau uses it. The agent uses it. The dashboards use it. Change a definition once — every surface updates." }
     ]
   },
 
-  // 26 · Page 27 — Data Cloud Segment · High Risk Trial Group · D360 Agent
+  // 30 · Slide 31 — D360 Agent → Segment Rules
   {
-    phase: "PHASE 2 · Plumbing 3",
+    phase: "Plumbing",
     beat: "Data 360 agent",
-    title: "Agent-authored segment · 16,735 patients",
-    time: "8:00",
+    title: "Agent-authored segment — 16,735 patients",
+    time: "6:50",
     sections: [
-      { label: "Persona", kind: "persona", text: "Speaker: April Moon" },
-      { label: "Do", kind: "do",
-        text: "Data Cloud · Segment · High Risk Trial Group. D360 Agent composes rules: Birth Date before 1971-04-01 · Clinical Encounter Count ≥ 1 · Start Date last 30 days. Segment population: 16,735. Status: Active." },
       { label: "Say", kind: "say",
-        text: "'Create segment rules for patients over 55 with recent clinical visits.' The agent writes the rules. 16,735 patients — live, not last month's export. Segment updates the moment any profile changes." },
-      { label: "Critical", kind: "note",
-        text: "USE THE D360 AGENT for segmentation — not the manual builder. That's the differentiating moment." }
+        text: "Create segment rules for patients over 55 with recent clinical visits. The Data 360 Agent writes the rules. 16,735 patients — live, not last month's export. The segment updates the moment any profile changes." }
     ]
   },
 
-  // 27 · Page 28 — Preference Builder · consent
+  // 31 · Slide 32 — Privacy Center · Consent
   {
-    phase: "PHASE 2 · Plumbing 4b",
+    phase: "Governance",
     beat: "Consent",
-    title: "Consent, per channel, per purpose",
-    time: "8:15",
+    title: "Per-channel, per-purpose consent",
+    time: "7:05",
     sections: [
-      { label: "Persona", kind: "persona", text: "Speaker: Sadhana Nandakumar" },
-      { label: "Do", kind: "do",
-        text: "Preference Builder · Patient Health Data Processing Consent V1. Three purposes: Cross-System Record Matching & Unification · Clinical Document Processing & Extraction · AI-Assisted Care Recommendations. Per-channel checkboxes (Address, Email, Phone) for each." },
       { label: "Say", kind: "say",
-        text: "Consent isn't a binary opt-in. It's per channel, per purpose. The patient says yes to matching, yes to document extraction, maybe to AI-assisted care — and that map travels with every downstream decision." }
+        text: "Consent isn't a binary opt-in. It's per channel, per purpose. The patient says yes to record matching, yes to document extraction, maybe to AI-assisted care — and that map travels with every downstream decision." }
     ]
   },
 
-  // 28 · Page 29 — Data Cloud · Data Governance · Tags · Healthcare Data.PHI
+  // 32 · Slide 33 — Data Governance · PHI
   {
-    phase: "PHASE 2 · Plumbing 4b",
+    phase: "Governance",
     beat: "Tags · classifications",
-    title: "PHI · 6 objects · 72 fields · 1 tag",
-    time: "8:30",
+    title: "PHI across 72 fields",
+    time: "7:20",
     sections: [
-      { label: "Do", kind: "do",
-        text: "Data Cloud · Data Governance · Tags. Healthcare Data.PHI — classifications GDPR, HIPAA, PII, Restricted. Used in 6 objects, 72 fields: Clinical Alert, Clinical Encounter, GlucoseMonitorEvent, RT_IndividualDG." },
       { label: "Say", kind: "say",
-        text: "One tag. 72 fields. Every downstream tool — agent, dashboard, segment — inherits the classification. You cannot accidentally use data you are not allowed to use." }
+        text: "One tag. 72 fields. Every downstream tool — agents, dashboards, APIs — inherits the classification and security policies defined in Data 360 Data Governance. You cannot accidentally use data you are not allowed to use." }
     ]
   },
 
-  // 29 · Page 30 — Salesforce Shield · Platform Encryption
+  // 33 · Slide 34 — Shield · Encryption
   {
-    phase: "PHASE 2 · Plumbing 4b",
+    phase: "Governance",
     beat: "Trust foundation",
-    title: "Shield · Platform Encryption",
-    time: "8:45",
+    title: "Encryption at every layer",
+    time: "7:35",
     sections: [
-      { label: "Do", kind: "do",
-        text: "Shield · Platform Encryption. Encrypt fields, files, attachments, search indexes. Key management · encryption statistics · audit trail." },
       { label: "Say", kind: "say",
-        text: "Encryption at rest, across every layer. Bring-your-own-key. Event monitoring. Audit trail. Trust isn't a bolted-on appliance — it's the floor the platform stands on." }
+        text: "Salesforce Shield provides encryption at rest, across every layer. Bring your own key. Event monitoring. Audit trail. Trust isn't a bolted-on appliance — it's the floor the platform stands on." }
     ]
   },
 
-  // 30 · Page 31 — Section divider · Data 360 Agent + Analytics Agent
+  // 34 · Slide 35 — Architecture Recap
   {
-    phase: "PHASE 3 · Close",
+    phase: "Close",
     beat: "Recap",
-    title: "Extending Data 360 Agent & Analytics Agent",
-    time: "9:00",
+    title: "The full architecture",
+    time: "7:50",
     sections: [
       { label: "Say", kind: "say",
-        text: "Everything we just walked — one platform, connected, trusted, governed, understood, activated, acted on. Questions at the campground. #tdx26-data360-campground." },
-      { label: "Direction", kind: "note",
-        text: "Slow down. Say the arc. This is the soundbite." }
+        text: "Everything we just walked — one platform, four systems, connected, trusted, governed, understood, activated, acted on. The Agentic Health Enterprise Architecture, end to end." }
     ]
   },
 
-  // 31 · Page 32 — Thank you
+  // 35 · Slide 36 — Thank You
   {
     phase: "Close",
     beat: "Thanks",
     title: "Thank you",
-    time: "10:00",
+    time: "8:00",
     sections: [
       { label: "Note", kind: "note",
-        text: "Applause beat. Desiree closes. Staffers hand out the PDF link / QR card to anyone lingering at the campground." }
+        text: "Thank you slide. Pause for applause." }
     ]
   },
 
-  // 32 · Page 33 — MeshMesh
+  // 36 · Slide 37 — How Was This Built?
   {
-    phase: "Bonus",
-    beat: "Behind the scenes",
-    title: "MeshMesh — patient record & related objects",
-    time: "After session",
+    phase: "Behind the Scenes",
+    beat: "AI reveal",
+    title: "How was this demo built?",
+    time: "8:10",
     sections: [
-      { label: "Note", kind: "note",
-        text: "MeshMesh lets us explore the patient record page and every related object in one surface. Used during build to verify the Data 360 schema before wiring it to the agent." }
+      { label: "Say", kind: "say",
+        text: "So — how was this demo actually built? Every component you just saw was accelerated by AI tooling. Let's walk through it." }
+    ]
+  },
+
+  // 37 · Slide 38 — Built With · Glucose Monitor
+  {
+    phase: "Behind the Scenes",
+    beat: "Claude Code",
+    title: "Glucose monitor simulator — Claude Code",
+    time: "8:20",
+    sections: [
+      { label: "Say", kind: "say",
+        text: "The glucose monitor simulator — the app that sends real-time readings into the Data 360 Real-Time Data Graph — was built entirely with Claude Code. From WebSocket streaming to the mobile UI, all generated through conversation with an AI coding agent." }
+    ]
+  },
+
+  // 38 · Slide 39 — Built With · MeshMesh
+  {
+    phase: "Behind the Scenes",
+    beat: "MeshMesh",
+    title: "Patient record design — MeshMesh",
+    time: "8:35",
+    sections: [
+      { label: "Say", kind: "say",
+        text: "MeshMesh was used to design the patient record page and all related Health Cloud objects in one visual surface — verifying the Data 360 schema before wiring it to the agent. UI design at the speed of thought." }
+    ]
+  },
+
+  // 39 · Slide 40 — Built With · Cursor
+  {
+    phase: "Behind the Scenes",
+    beat: "Cursor",
+    title: "Tableau dashboard data — Cursor",
+    time: "8:50",
+    sections: [
+      { label: "Say", kind: "say",
+        text: "The Health Cloud data powering the Tableau Next dashboards — patient encounters, CSAT scores, clinical metrics — was generated with Cursor. Realistic healthcare data, shaped to match the semantic model, created through AI-assisted code generation." }
+    ]
+  },
+
+  // 40 · Slide 41 — Built With · Claude Design + Code
+  {
+    phase: "Behind the Scenes",
+    beat: "This presentation",
+    title: "This presentation — Claude Design + Claude Code",
+    time: "9:05",
+    sections: [
+      { label: "Say", kind: "say",
+        text: "And finally — what you're watching right now. This presentation is not a recording. It's a live web application built with Claude Design and Claude Code, narrated by an ElevenLabs voice clone of the presenter. The slides, the navigation, the voiceover, the deployment to AWS — all built through conversation with AI. The demo demos itself." }
     ]
   }
 ];

@@ -79,7 +79,7 @@ Note: The rendered slide images (`public/rendered/page-*.jpg`) are not checked i
 | `1`–`9`, `0` | Jump to slide 1–10 |
 | `R` | Reset to slide 1 |
 | `N` | Toggle narrative overlay |
-| `V` | Toggle voiceover |
+| `M` | Mute / unmute voiceover |
 
 ## Deploying
 
@@ -94,7 +94,15 @@ docker push <account-id>.dkr.ecr.us-east-1.amazonaws.com/mega-demo:latest
 aws apprunner start-deployment --service-arn <service-arn> --region us-east-1
 ```
 
-## Tools used
+## AI tools used across the solution
 
-- [Claude Design](https://claude.ai/design) — visual prototyping and handoff bundle generation
-- [Claude Code](https://claude.ai/code) — implementation, iteration, and deployment
+This demo is itself a showcase of AI-assisted development. Every component — from the healthcare simulation to the presentation you're watching — was built or accelerated by AI tooling:
+
+| Component | AI Tool | What it did |
+|-----------|---------|-------------|
+| **Glucose monitor simulator** | [Claude Code](https://claude.ai/code) | Built the real-time WebSocket app that streams glucose readings into the Data 360 Real-Time Data Graph |
+| **Patient record page** | [MeshMesh](https://meshmesh.io) | Designed the Health Cloud patient record page and related objects in one visual surface, verifying the Data 360 schema before wiring it to agents |
+| **Tableau dashboard data** | [Cursor](https://cursor.com) | Generated realistic healthcare data (patient encounters, CSAT scores, clinical metrics) shaped to match the semantic model |
+| **Presentation web app** | [Claude Design](https://claude.ai/design) + [Claude Code](https://claude.ai/code) | Claude Design prototyped the slide deck with narrative overlay; Claude Code converted it to a React app with ElevenLabs voiceover, autoplay, and deployed it to AWS |
+| **Voiceover narration** | [ElevenLabs](https://elevenlabs.io) | The default voice is a clone of the presenter's own voice — the demo literally narrates itself |
+| **AWS deployment** | [Claude Code](https://claude.ai/code) | Dockerized the app, pushed to ECR, and deployed to App Runner — all from the CLI in conversation |
