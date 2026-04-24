@@ -1,6 +1,8 @@
 // Clickable link overlays for specific slides.
 // Coordinates are percentages of the 1920x1080 design canvas.
 
+import { trackLinkClick } from '../hooks/useDataCloud';
+
 interface SlideLink {
   href: string;
   top: number;
@@ -48,6 +50,7 @@ export default function SlideLinks({ slideIndex }: { slideIndex: number }) {
             borderRadius: 4,
             transition: 'background 150ms ease',
           }}
+          onClick={() => trackLinkClick(link.href, slideIndex)}
           onMouseEnter={e => { (e.target as HTMLElement).style.background = 'rgba(255,255,255,0.08)'; }}
           onMouseLeave={e => { (e.target as HTMLElement).style.background = 'transparent'; }}
         />

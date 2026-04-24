@@ -7,8 +7,19 @@ import Autoplay from './Autoplay';
 import { useVoiceover } from '../hooks/useVoiceover';
 import SlideHighlight from './SlideHighlight';
 import SlideLinks from './SlideLinks';
+import {
+  useDataCloudInit,
+  trackSlideView,
+  trackPlay,
+  trackPause,
+  trackMute,
+  trackUnmute,
+  trackSlideJump,
+  trackPresentationComplete,
+} from '../hooks/useDataCloud';
 
 export default function DeckStage() {
+  useDataCloudInit();
   const deckRef = useRef<HTMLElement>(null);
   const [slideIndex, setSlideIndex] = useState(0);
   const [playing, setPlaying] = useState(false);
@@ -26,6 +37,10 @@ export default function DeckStage() {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent).detail;
       setSlideIndex(detail.index);
+      trackSlideView(detail.index);
+      if (detail.index === detail.total - 1) {
+        trackPresentationComplete(detail.total);
+      }
     };
     deck.addEventListener('slidechange', handler);
     return () => deck.removeEventListener('slidechange', handler);
@@ -93,11 +108,13 @@ export default function DeckStage() {
   const togglePlay = useCallback(() => {
     setPlaying(p => {
       if (!p) {
+        trackPlay(deckRef.current ? (deckRef.current as any).index : 0);
         const deck = deckRef.current as any;
         if (deck && deck.index >= deck.length - 1) {
           deck.goTo(0);
         }
       } else {
+        trackPause(deckRef.current ? (deckRef.current as any).index : 0);
         voiceover.stop();
       }
       return !p;
@@ -107,8 +124,10 @@ export default function DeckStage() {
   const toggleMute = useCallback(() => {
     setMuted(m => {
       if (!m) {
-        // Muting — stop current speech
+        trackMute();
         voiceover.stop();
+      } else {
+        trackUnmute();
       }
       return !m;
     });
@@ -164,6 +183,7 @@ export default function DeckStage() {
         onVoiceSettingsChange={voiceover.setSettings}
         onVoicePreview={voiceover.preview}
         onGoToSlide={(i) => {
+          trackSlideJump(slideIndex, i);
           setPlaying(false);
           voiceover.stop();
           const deck = deckRef.current as any;

@@ -61,11 +61,16 @@ function createElevenLabsProvider(settings: VoiceSettings): VoiceoverProvider {
         });
       } catch (e: any) {
         if (e.name === 'AbortError') return;
-        throw e;
+        console.error('[ElevenLabs] TTS fetch error:', e);
+        // Wait instead of resolving instantly — prevents rapid-fire advance
+        await new Promise(() => {}); // never resolves (caller must abort)
+        return;
       }
 
       if (!resp.ok) {
-        console.error('[ElevenLabs] TTS request failed:', resp.status, await resp.text());
+        console.error('[ElevenLabs] TTS request failed:', resp.status);
+        // Don't resolve — wait forever so slides don't rapid-advance on error
+        await new Promise(() => {});
         return;
       }
 

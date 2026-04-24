@@ -4,6 +4,7 @@ import {
   type VoiceSettings,
   type ElevenLabsVoice,
 } from '../hooks/useVoiceover';
+import { trackVoiceChange } from '../hooks/useDataCloud';
 
 export default function VoicePicker({
   settings,
@@ -127,6 +128,7 @@ export default function VoicePicker({
                   selected={settings.voiceId === v.voice_id}
                   onClick={() => {
                     onSettingsChange({ ...settings, voiceId: v.voice_id });
+                    trackVoiceChange(v.voice_id);
                     onPreview(v.voice_id);
                     setOpen(false);
                   }}
