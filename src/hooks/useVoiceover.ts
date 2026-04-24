@@ -24,6 +24,25 @@ const DEFAULT_SETTINGS: VoiceSettings = {
   similarityBoost: 0.75,
 };
 
+// ---------- Audio unlock ----------
+// Browsers block audio playback until a user gesture has triggered at least
+// one audio play. We unlock by playing a silent audio on the first click.
+let audioUnlocked = false;
+const audioContext = typeof AudioContext !== 'undefined' ? new AudioContext() : null;
+
+export function unlockAudio() {
+  if (audioUnlocked) return;
+  audioUnlocked = true;
+  // Resume AudioContext (Chrome requires this from a user gesture)
+  if (audioContext?.state === 'suspended') {
+    audioContext.resume();
+  }
+  // Also play a silent HTML audio to unlock HTMLAudioElement playback
+  const silence = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=');
+  silence.volume = 0;
+  silence.play().catch(() => {});
+}
+
 // ---------- ElevenLabs provider ----------
 
 function createElevenLabsProvider(settings: VoiceSettings): VoiceoverProvider {

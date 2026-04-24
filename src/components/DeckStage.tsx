@@ -4,7 +4,7 @@ import { SLIDE_LABELS, DARK_SLIDES, TOTAL_SLIDES } from '../data/slides';
 import { SPEAKER_NOTES } from '../data/slides';
 import Narrative from './Narrative';
 import Autoplay from './Autoplay';
-import { useVoiceover } from '../hooks/useVoiceover';
+import { useVoiceover, unlockAudio } from '../hooks/useVoiceover';
 import SlideHighlight from './SlideHighlight';
 import SlideLinks from './SlideLinks';
 import {
@@ -106,6 +106,7 @@ export default function DeckStage() {
   }, [voiceover.stop]);
 
   const togglePlay = useCallback(() => {
+    unlockAudio(); // Must run synchronously in the click handler
     setPlaying(p => {
       if (!p) {
         trackPlay(deckRef.current ? (deckRef.current as any).index : 0);
@@ -122,6 +123,7 @@ export default function DeckStage() {
   }, [voiceover.stop]);
 
   const toggleMute = useCallback(() => {
+    unlockAudio();
     setMuted(m => {
       if (!m) {
         trackMute();
