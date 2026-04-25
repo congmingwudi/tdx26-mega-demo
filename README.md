@@ -40,8 +40,14 @@ This project showcases a workflow that takes a static presentation and transform
 
 4. **Observability via serverless logging service (Claude Code)**
    - Built a companion AWS SAM project ([aws-logging-service](https://github.com/congmingwudi/aws-logging-service)) — a Lambda + API Gateway endpoint that receives structured log events from the app, writes them to CloudWatch Logs (90-day retention), and posts Slack notifications to a dedicated `#logs` channel.
-   - The app sends a **play event** each time a user starts the presentation, capturing browser, language, timezone, screen resolution, and referrer.
+   - The app sends a **play event** each time a user starts the presentation, and an event whenever **Ask Claude** or **Kiosk mode** is opened — each capturing browser, language, timezone, screen resolution, referrer, slide number, and slide title.
    - Any **voiceover failure** (ElevenLabs API error, quota exhaustion, audio playback blocked) is logged and posted to Slack in real time. The UI simultaneously disables the voice button and shows a "Voiceover unavailable · refresh to retry" banner so the presenter is never left wondering why narration stopped.
+
+5. **Claude agent — Ask Claude panel + Kiosk mode (Claude Code)**
+   - Added an **Ask Claude** chat drawer (press `C` or click the button in the control bar) — a streaming Q&A panel grounded in the current slide's narrative text plus the full presentation overview. The system prompt updates automatically as you navigate slides.
+   - Added a **Kiosk mode** (`K`) — a full-screen Q&A overlay designed for conference booth self-serve, with suggested questions, a slide quick-jump menu, and a "New chat" button for resetting between visitors. The first suggested question is "How was this presentation itself built?" — prompting Claude to walk through the entire build story.
+   - Both features use the **Anthropic SDK** (`@anthropic-ai/sdk`) with `claude-opus-4-7` and streaming SSE. The Anthropic API key is kept server-side in the same Express server, proxied through `POST /api/claude/chat` — it never reaches the browser.
+   - A custom **slide 42 — "App Architecture · How It Was Built"** was added to the deck (before Resources). It is a fully React-rendered slide — no background image — showing the build flow (5 steps) and runtime architecture as live HTML/CSS diagrams.
 
 ## Presentation app — build flow
 
@@ -75,7 +81,13 @@ flowchart TD
         SAM["AWS SAM\naws-logging-service"]
         LAMBDA["AWS Lambda\nNode 22 · arm64"]
         CW["CloudWatch Logs\n90-day retention"]
-        SLACK["Slack #logs\nPlay events &\nvoiceover failures"]
+        SLACK["Slack #logs\nPlay · Ask Claude · Kiosk\n& voiceover failures"]
+    end
+
+    subgraph Agent["Step 5 · Claude Code — Claude Agent"]
+        ASKCLAUDE["Ask Claude panel\n• Slide-context Q&A\n• Streaming SSE\n• claude-opus-4-7"]
+        KIOSK["Kiosk mode\n• Full-screen booth Q&A\n• Suggested questions\n• New chat per visitor"]
+        ARCHSLIDE["Slide 42 — App Architecture\n• Custom React-rendered slide\n• Build + runtime diagrams"]
     end
 
     PDF --> CD
@@ -92,7 +104,12 @@ flowchart TD
     SAM --> LAMBDA
     LAMBDA --> CW
     LAMBDA --> SLACK
-    AR -->|"POST /log"| LAMBDA
+    AR -->|"POST /log\nplay · Ask Claude · Kiosk"| LAMBDA
+    CC --> ASKCLAUDE
+    CC --> KIOSK
+    CC --> ARCHSLIDE
+    ASKCLAUDE -->|"POST /api/claude/chat\nSSE stream"| AR
+    KIOSK -->|"POST /api/claude/chat\nSSE stream"| AR
 ```
 
 ## Presentation app — runtime architecture
@@ -102,17 +119,22 @@ How the deployed app handles a user session end-to-end:
 ```mermaid
 flowchart LR
     subgraph Browser["User's Browser"]
-        UI["React App\n• Slide deck\n• Narrative overlay\n• Autoplay controls"]
+        UI["React App\n• Slide deck · Narrative overlay\n• Autoplay controls\n• Ask Claude panel\n• Kiosk mode"]
     end
 
     subgraph AppRunner["AWS App Runner · us-east-1"]
         EXPRESS["Express Server\nport 8080"]
         STATIC["Static Assets\ndist/ (React build +\nslide images)"]
-        PROXY["ElevenLabs Proxy\nPOST /api/elevenlabs/tts\nAPI key never leaves server"]
+        ELPROXY["ElevenLabs Proxy\nPOST /api/elevenlabs/tts\nAPI key never leaves server"]
+        CLPROXY["Claude Proxy\nPOST /api/claude/chat\nSSE stream · key never leaves server"]
     end
 
     subgraph ElevenLabs["ElevenLabs"]
         ELAPI["TTS API\nvoice synthesis"]
+    end
+
+    subgraph Anthropic["Anthropic"]
+        CLAPI["claude-opus-4-7\nstreaming"]
     end
 
     subgraph LoggingService["AWS Logging Service · us-west-2"]
@@ -122,16 +144,20 @@ flowchart LR
     end
 
     subgraph Slack["Slack"]
-        LOGS["#logs channel\nPlay events\nVoiceover failures"]
+        LOGS["#logs channel\nPlay · Ask Claude · Kiosk\n& voiceover failures"]
     end
 
     UI -->|"serve app"| EXPRESS
     EXPRESS --> STATIC
-    UI -->|"TTS request\n(slide narration)"| PROXY
-    PROXY -->|"xi-api-key header"| ELAPI
-    ELAPI -->|"audio/mpeg"| PROXY
-    PROXY -->|"audio blob"| UI
-    UI -->|"play event\n+ browser detail"| APIGW
+    UI -->|"TTS request\n(slide narration)"| ELPROXY
+    ELPROXY -->|"xi-api-key header"| ELAPI
+    ELAPI -->|"audio/mpeg"| ELPROXY
+    ELPROXY -->|"audio blob"| UI
+    UI -->|"chat message"| CLPROXY
+    CLPROXY -->|"x-api-key header"| CLAPI
+    CLAPI -->|"SSE text chunks"| CLPROXY
+    CLPROXY -->|"SSE stream"| UI
+    UI -->|"play · Ask Claude · Kiosk\n+ browser + slide detail"| APIGW
     UI -->|"voiceover error\n+ HTTP status"| APIGW
     APIGW --> LAMBDA
     LAMBDA --> CW
@@ -186,6 +212,7 @@ The voice-over web app itself is built with:
 - **Frontend**: React 19, TypeScript, Vite 8, Tailwind CSS v4, React Router v7
 - **Slide engine**: `<deck-stage>` custom element — keyboard/tap navigation, viewport scaling, localStorage persistence, print layout
 - **Voiceover**: ElevenLabs TTS API via server-side Express proxy, with presenter's cloned voice as default
+- **Claude agent**: Anthropic SDK (`@anthropic-ai/sdk`), `claude-opus-4-7`, streaming SSE via server-side Express proxy
 - **Deployment**: Docker (Node 22 + Express), Amazon ECR, AWS App Runner
 
 ## Running locally
@@ -207,6 +234,8 @@ Note: The rendered slide images (`public/rendered/page-*.jpg`) are not checked i
 | `R` | Reset to slide 1 |
 | `N` | Toggle narrative overlay |
 | `M` | Mute / unmute voiceover |
+| `C` | Toggle Ask Claude panel (slide-context Q&A) |
+| `K` | Open kiosk mode (full-screen demo Q&A) |
 
 ## Deploying
 
@@ -239,4 +268,5 @@ This demo is itself a showcase of AI-assisted development. Every component — f
 | **Presentation web app** | [Claude Design](https://claude.ai/design) + [Claude Code](https://claude.ai/code) | Claude Design prototyped the slide deck with narrative overlay; Claude Code converted it to a React app with ElevenLabs voiceover, autoplay, and deployed it to AWS |
 | **Voiceover narration** | [ElevenLabs](https://elevenlabs.io) | The default voice is a clone of the presenter's own voice — the demo literally narrates itself |
 | **AWS deployment** | [Claude Code](https://claude.ai/code) | Dockerized the app, pushed to ECR, and deployed to App Runner — all from the CLI in conversation |
-| **Logging & alerting** | [Claude Code](https://claude.ai/code) | Built a serverless Lambda logging API (SAM) that forwards play events and voiceover errors to CloudWatch and Slack `#logs` in real time |
+| **Logging & alerting** | [Claude Code](https://claude.ai/code) | Built a serverless Lambda logging API (SAM) that forwards play, Ask Claude, and Kiosk events (with browser + slide detail) and voiceover errors to CloudWatch and Slack `#logs` in real time |
+| **Ask Claude + Kiosk mode** | [Claude Code](https://claude.ai/code) | Built a streaming slide-context Q&A panel and a full-screen kiosk mode powered by `claude-opus-4-7` via a server-side Anthropic SDK proxy |

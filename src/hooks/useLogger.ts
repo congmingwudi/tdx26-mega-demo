@@ -1,3 +1,5 @@
+import { SLIDE_LABELS } from '../data/slides';
+
 const LOGGING_URL = import.meta.env.VITE_LOGGING_API_URL as string | undefined;
 const LOGGING_KEY = import.meta.env.VITE_LOGGING_API_KEY as string | undefined;
 
@@ -10,6 +12,25 @@ function post(payload: object): void {
   }).catch(() => {});
 }
 
+function browserDetail() {
+  const { language, userAgent } = navigator;
+  const { timeZone } = Intl.DateTimeFormat().resolvedOptions();
+  return {
+    browser: userAgent,
+    language,
+    timezone: timeZone,
+    screen: `${window.screen.width}x${window.screen.height}`,
+    referrer: document.referrer || null,
+  };
+}
+
+function slideDetail(slideIndex: number) {
+  return {
+    slide: slideIndex + 1,
+    slideTitle: SLIDE_LABELS[slideIndex] ?? null,
+  };
+}
+
 export function logError(message: string, detail?: unknown): void {
   post({
     source: 'mega-demo',
@@ -19,21 +40,29 @@ export function logError(message: string, detail?: unknown): void {
   });
 }
 
-export function logPlay(slideIndex: number): void {
-  const { language, userAgent } = navigator;
-  const { timeZone } = Intl.DateTimeFormat().resolvedOptions();
+export function logAskClaude(slideIndex: number): void {
+  post({
+    source: 'mega-demo',
+    level: 'info',
+    message: 'Ask Claude opened',
+    detail: { ...slideDetail(slideIndex), ...browserDetail() },
+  });
+}
 
+export function logKiosk(slideIndex: number): void {
+  post({
+    source: 'mega-demo',
+    level: 'info',
+    message: 'Kiosk mode opened',
+    detail: { ...slideDetail(slideIndex), ...browserDetail() },
+  });
+}
+
+export function logPlay(slideIndex: number): void {
   post({
     source: 'mega-demo',
     level: 'info',
     message: 'Presentation started',
-    detail: {
-      slide: slideIndex + 1,
-      browser: userAgent,
-      language,
-      timezone: timeZone,
-      screen: `${window.screen.width}x${window.screen.height}`,
-      referrer: document.referrer || null,
-    },
+    detail: { ...slideDetail(slideIndex), ...browserDetail() },
   });
 }

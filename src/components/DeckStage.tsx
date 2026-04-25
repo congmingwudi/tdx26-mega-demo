@@ -7,6 +7,9 @@ import Autoplay from './Autoplay';
 import { useVoiceover, unlockAudio } from '../hooks/useVoiceover';
 import SlideHighlight from './SlideHighlight';
 import SlideLinks from './SlideLinks';
+import AskClaude from './AskClaude';
+import KioskMode from './KioskMode';
+import ArchSlide from './ArchSlide';
 import {
   useDataCloudInit,
   trackSlideView,
@@ -17,7 +20,7 @@ import {
   trackSlideJump,
   trackPresentationComplete,
 } from '../hooks/useDataCloud';
-import { logPlay } from '../hooks/useLogger';
+import { logPlay, logAskClaude, logKiosk } from '../hooks/useLogger';
 
 export default function DeckStage() {
   useDataCloudInit();
@@ -26,6 +29,8 @@ export default function DeckStage() {
   const [playing, setPlaying] = useState(false);
   const [muted, setMuted] = useState(false);
   const [interval, setInterval_] = useState(3);
+  const [askClaudeOpen, setAskClaudeOpen] = useState(false);
+  const [kioskOpen, setKioskOpen] = useState(false);
   const voiceover = useVoiceover();
   const playingRef = useRef(false);
   playingRef.current = playing;
@@ -97,6 +102,16 @@ export default function DeckStage() {
         setMuted(m => !m);
         return;
       }
+      if (e.key === 'c' || e.key === 'C') {
+        e.preventDefault();
+        setAskClaudeOpen(o => { if (!o) logAskClaude(slideIndex); return !o; });
+        return;
+      }
+      if (e.key === 'k' || e.key === 'K') {
+        e.preventDefault();
+        setKioskOpen(o => { if (!o) logKiosk(slideIndex); return !o; });
+        return;
+      }
       if (['ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', ' ', 'Home', 'End'].includes(e.key) || /^[0-9r]$/i.test(e.key)) {
         setPlaying(false);
         voiceover.stop();
@@ -138,10 +153,30 @@ export default function DeckStage() {
     });
   }, [voiceover.stop]);
 
+  // Slide 42 (index 41) is a custom React-rendered slide — no background image
+  const ARCH_SLIDE_INDEX = 41;
+
   const slides = Array.from({ length: TOTAL_SLIDES }, (_, i) => {
     const num = String(i + 1).padStart(2, '0');
     const label = SLIDE_LABELS[i];
     const isDark = DARK_SLIDES.has(i + 1);
+
+    if (i === ARCH_SLIDE_INDEX) {
+      return (
+        <section
+          key={i}
+          className="slide-img dark"
+          data-screen-label={`${num} ${label}`}
+        >
+          <ArchSlide />
+          {i === slideIndex && <SlideLinks slideIndex={slideIndex} />}
+          <div className="slide-chrome">
+            <span>{label}</span>
+            <span>{num} / {TOTAL_SLIDES}</span>
+          </div>
+        </section>
+      );
+    }
 
     return (
       <section
@@ -183,11 +218,17 @@ export default function DeckStage() {
         slideIndex={slideIndex}
         totalSlides={TOTAL_SLIDES}
         slideLabels={SLIDE_LABELS}
+        askClaudeOpen={askClaudeOpen}
         onTogglePlay={togglePlay}
         onToggleMute={toggleMute}
         onIntervalChange={setInterval_}
         onVoiceSettingsChange={voiceover.setSettings}
         onVoicePreview={voiceover.preview}
+        onAskClaude={() => setAskClaudeOpen(o => {
+          if (!o) logAskClaude(slideIndex);
+          return !o;
+        })}
+        onKioskMode={() => { logKiosk(slideIndex); setKioskOpen(true); }}
         onGoToSlide={(i) => {
           trackSlideJump(slideIndex, i);
           setPlaying(false);
@@ -196,6 +237,20 @@ export default function DeckStage() {
           if (deck) deck.goTo(i);
         }}
       />
+
+      {askClaudeOpen && (
+        <AskClaude slideIndex={slideIndex} onClose={() => setAskClaudeOpen(false)} />
+      )}
+
+      {kioskOpen && (
+        <KioskMode
+          onClose={() => setKioskOpen(false)}
+          onGoToSlide={(i) => {
+            const deck = deckRef.current as any;
+            if (deck) deck.goTo(i);
+          }}
+        />
+      )}
     </>
   );
 }

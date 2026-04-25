@@ -526,12 +526,26 @@ export const NARRATIVE: NarrativeEntry[] = [
     ]
   },
 
-  // 41 · Slide 42 — Resources
+  // 41 · Slide 42 — App Architecture · How It Was Built
+  {
+    phase: "Behind the Scenes",
+    beat: "Build + runtime architecture",
+    title: "App Architecture — How It Was Built",
+    time: "9:15",
+    sections: [
+      { label: "Say", kind: "say",
+        text: "And here's a look under the hood of this presentation app itself. Four steps to build it: Claude Design prototyped the slide deck from the PDF and speaker script. Claude Code converted that into a React app with ElevenLabs voiceover, deployed it to AWS App Runner via Docker and ECR, and built a serverless logging service on Lambda. At runtime, the Express server proxies ElevenLabs and Claude, so neither API key ever reaches the browser. And yes — this very chat is part of the same app, powered by claude-opus-4-7 streaming through that same proxy." },
+      { label: "Note", kind: "note",
+        text: "This is the meta slide — the presentation explains how it built itself. A great moment to pause and let it land." }
+    ]
+  },
+
+  // 42 · Slide 43 — Resources
   {
     phase: "Resources",
     beat: "Links",
     title: "Resources & Links",
-    time: "9:20",
+    time: "9:30",
     sections: [
       { label: "Say", kind: "say",
         text: "Here are all the links. You can open this presentation in your own browser, check out the GitHub repos for this voice-over app and the glucose monitor simulator, and find me on LinkedIn. Thanks for watching." }

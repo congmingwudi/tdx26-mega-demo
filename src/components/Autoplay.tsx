@@ -14,11 +14,14 @@ export default function Autoplay({
   slideIndex,
   totalSlides,
   slideLabels,
+  askClaudeOpen,
   onTogglePlay,
   onToggleMute,
   onIntervalChange,
   onVoiceSettingsChange,
   onVoicePreview,
+  onAskClaude,
+  onKioskMode,
   onGoToSlide,
 }: {
   playing: boolean;
@@ -30,11 +33,14 @@ export default function Autoplay({
   slideIndex: number;
   totalSlides: number;
   slideLabels: string[];
+  askClaudeOpen: boolean;
   onTogglePlay: () => void;
   onToggleMute: () => void;
   onIntervalChange: (s: number) => void;
   onVoiceSettingsChange: (s: VoiceSettings) => void;
   onVoicePreview: (voiceId: string) => void;
+  onAskClaude: () => void;
+  onKioskMode: () => void;
   onGoToSlide: (index: number) => void;
 }) {
   return (
@@ -166,6 +172,45 @@ export default function Autoplay({
           Paced by voice
         </span>
       )}
+
+      <Divider />
+
+      {/* Ask Claude button */}
+      <button
+        onClick={onAskClaude}
+        title="Ask Claude about this slide (C)"
+        style={{
+          ...btnStyle,
+          padding: '0 10px',
+          gap: 5,
+          fontSize: 11,
+          color: askClaudeOpen ? '#FF6B35' : 'rgba(255,255,255,0.72)',
+          background: askClaudeOpen ? 'rgba(255,107,53,0.15)' : 'transparent',
+          border: askClaudeOpen ? '1px solid rgba(255,107,53,0.3)' : '1px solid transparent',
+        }}
+      >
+        <ClaudeIcon active={askClaudeOpen} />
+        <span>Ask Claude</span>
+      </button>
+
+      {/* Kiosk mode button */}
+      <button
+        onClick={onKioskMode}
+        title="Open kiosk Q&A mode (K)"
+        style={{
+          ...btnStyle,
+          padding: '0 10px',
+          gap: 5,
+          fontSize: 11,
+          color: 'rgba(255,255,255,0.5)',
+        }}
+      >
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="2" y="2" width="12" height="9" rx="1.5" />
+          <path d="M5 14h6M8 11v3" />
+        </svg>
+        <span>Kiosk</span>
+      </button>
     </div>
   );
 }
@@ -312,6 +357,17 @@ function SlideJump({
 
 function Divider() {
   return <span style={{ width: 1, height: 14, background: 'rgba(255,255,255,0.18)', margin: '0 2px' }} />;
+}
+
+function ClaudeIcon({ active }: { active: boolean }) {
+  const color = active ? '#FF6B35' : 'currentColor';
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
+      <circle cx="12" cy="12" r="10" fill={active ? 'rgba(255,107,53,0.2)' : 'rgba(255,255,255,0.12)'} />
+      <path d="M15.5 8.5C14.5 7.5 13.3 7 12 7C9.2 7 7 9.2 7 12C7 14.8 9.2 17 12 17C13.3 17 14.5 16.5 15.5 15.5"
+        stroke={color} strokeWidth="2" strokeLinecap="round" fill="none" />
+    </svg>
+  );
 }
 
 const btnStyle: React.CSSProperties = {

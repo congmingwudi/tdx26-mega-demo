@@ -1,6 +1,7 @@
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import Anthropic from '@anthropic-ai/sdk'
 import type { Plugin } from 'vite'
 
 // Dev-only plugin: proxy ElevenLabs API calls so the key never reaches the browser.
@@ -82,6 +83,61 @@ function elevenLabsProxy(): Plugin {
   };
 }
 
+function claudeProxy(): Plugin {
+  let anthropic: Anthropic | null = null;
+
+  return {
+    name: 'claude-proxy',
+    configResolved(config) {
+      const env = loadEnv(config.mode, config.root, '');
+      const key = env.ANTHROPIC_API_KEY || '';
+      if (!key) { console.warn('[claude-proxy] ANTHROPIC_API_KEY not set in .env'); return; }
+      anthropic = new Anthropic({ apiKey: key });
+    },
+    configureServer(server) {
+      server.middlewares.use('/api/claude', async (req, res, next) => {
+        if (req.url !== '/chat' || req.method !== 'POST') { next(); return; }
+
+        if (!anthropic) {
+          res.statusCode = 503;
+          res.end(JSON.stringify({ error: 'Anthropic API key not configured' }));
+          return;
+        }
+
+        const chunks: Buffer[] = [];
+        req.on('data', (c: Buffer) => chunks.push(c));
+        req.on('end', async () => {
+          const body = JSON.parse(Buffer.concat(chunks).toString());
+          const { messages, systemPrompt } = body;
+
+          res.setHeader('Content-Type', 'text/event-stream');
+          res.setHeader('Cache-Control', 'no-cache');
+          res.setHeader('Connection', 'keep-alive');
+
+          try {
+            const stream = anthropic!.messages.stream({
+              model: 'claude-opus-4-7',
+              max_tokens: 1024,
+              system: systemPrompt || 'You are a helpful assistant.',
+              messages,
+            });
+
+            for await (const event of stream) {
+              if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
+                res.write(`data: ${JSON.stringify({ text: event.delta.text })}\n\n`);
+              }
+            }
+            res.write('data: [DONE]\n\n');
+          } catch (err: unknown) {
+            res.write(`data: ${JSON.stringify({ error: (err as Error)?.message ?? 'Claude API error' })}\n\n`);
+          }
+          res.end();
+        });
+      });
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [react(), tailwindcss(), elevenLabsProxy()],
+  plugins: [react(), tailwindcss(), elevenLabsProxy(), claudeProxy()],
 })
