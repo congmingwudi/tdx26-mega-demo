@@ -43,6 +43,101 @@ This project showcases a workflow that takes a static presentation and transform
    - The app sends a **play event** each time a user starts the presentation, capturing browser, language, timezone, screen resolution, and referrer.
    - Any **voiceover failure** (ElevenLabs API error, quota exhaustion, audio playback blocked) is logged and posted to Slack in real time. The UI simultaneously disables the voice button and shows a "Voiceover unavailable · refresh to retry" banner so the presenter is never left wondering why narration stopped.
 
+## Presentation app — build flow
+
+How the presentation web app was constructed, from raw inputs to deployed product:
+
+```mermaid
+flowchart TD
+    subgraph Inputs["Inputs"]
+        PDF["PDF Presentation\n(41 slides)"]
+        SCRIPT["Speaker Script\n(per-slide narrative,\nstage directions, timing)"]
+    end
+
+    subgraph Design["Step 1 · Claude Design"]
+        CD["Claude Design\nclaude.ai/design"]
+        PROTO["HTML Prototype\n• deck-stage web component\n• narrative overlay panel\n• slide images"]
+    end
+
+    subgraph Code["Step 2 · Claude Code — React App"]
+        CC["Claude Code\nclaude.ai/code"]
+        REACT["React 19 + TypeScript\n• Vite 8 · Tailwind CSS v4\n• deck-stage web component\n• Narrative overlay\n• Autoplay controls"]
+        TTS["ElevenLabs TTS\n• Cloned presenter voice\n• Voice picker + sliders\n• Server-side API proxy"]
+    end
+
+    subgraph Deploy["Step 3 · Claude Code — AWS Deployment"]
+        DOCKER["Docker\nMulti-stage image\nNode 22 + Express"]
+        ECR["Amazon ECR\nus-east-1"]
+        AR["AWS App Runner\nHTTPS · Auto-scaling\nbit.ly/tdx26-mega-demo"]
+    end
+
+    subgraph Observe["Step 4 · Claude Code — Observability"]
+        SAM["AWS SAM\naws-logging-service"]
+        LAMBDA["AWS Lambda\nNode 22 · arm64"]
+        CW["CloudWatch Logs\n90-day retention"]
+        SLACK["Slack #logs\nPlay events &\nvoiceover failures"]
+    end
+
+    PDF --> CD
+    SCRIPT --> CD
+    CD --> PROTO
+    PROTO --> CC
+    CC --> REACT
+    CC --> TTS
+    REACT --> DOCKER
+    TTS --> DOCKER
+    DOCKER --> ECR
+    ECR --> AR
+    CC --> SAM
+    SAM --> LAMBDA
+    LAMBDA --> CW
+    LAMBDA --> SLACK
+    AR -->|"POST /log"| LAMBDA
+```
+
+## Presentation app — runtime architecture
+
+How the deployed app handles a user session end-to-end:
+
+```mermaid
+flowchart LR
+    subgraph Browser["User's Browser"]
+        UI["React App\n• Slide deck\n• Narrative overlay\n• Autoplay controls"]
+    end
+
+    subgraph AppRunner["AWS App Runner · us-east-1"]
+        EXPRESS["Express Server\nport 8080"]
+        STATIC["Static Assets\ndist/ (React build +\nslide images)"]
+        PROXY["ElevenLabs Proxy\nPOST /api/elevenlabs/tts\nAPI key never leaves server"]
+    end
+
+    subgraph ElevenLabs["ElevenLabs"]
+        ELAPI["TTS API\nvoice synthesis"]
+    end
+
+    subgraph LoggingService["AWS Logging Service · us-west-2"]
+        APIGW["API Gateway\nPOST /log\nX-Api-Key auth"]
+        LAMBDA["Lambda\nmega-demo-logger\nNode 22 · arm64"]
+        CW["CloudWatch Logs\n/aws/lambda/mega-demo-logger\n90-day retention"]
+    end
+
+    subgraph Slack["Slack"]
+        LOGS["#logs channel\nPlay events\nVoiceover failures"]
+    end
+
+    UI -->|"serve app"| EXPRESS
+    EXPRESS --> STATIC
+    UI -->|"TTS request\n(slide narration)"| PROXY
+    PROXY -->|"xi-api-key header"| ELAPI
+    ELAPI -->|"audio/mpeg"| PROXY
+    PROXY -->|"audio blob"| UI
+    UI -->|"play event\n+ browser detail"| APIGW
+    UI -->|"voiceover error\n+ HTTP status"| APIGW
+    APIGW --> LAMBDA
+    LAMBDA --> CW
+    LAMBDA -->|"Slack webhook"| LOGS
+```
+
 ## Solution architecture
 
 The demo walks through a healthcare scenario where a patient's glucose monitor triggers an end-to-end workflow across multiple Salesforce and partner systems.
