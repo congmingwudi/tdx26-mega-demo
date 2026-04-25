@@ -38,6 +38,11 @@ This project showcases a workflow that takes a static presentation and transform
    - Pushed the image to Amazon ECR and deployed to AWS App Runner with HTTPS, auto-scaling, and a public URL — all from the CLI without leaving the conversation.
    - The ElevenLabs API key is passed as an environment variable to the container at deploy time.
 
+4. **Observability via serverless logging service (Claude Code)**
+   - Built a companion AWS SAM project ([aws-logging-service](https://github.com/congmingwudi/aws-logging-service)) — a Lambda + API Gateway endpoint that receives structured log events from the app, writes them to CloudWatch Logs (90-day retention), and posts Slack notifications to a dedicated `#logs` channel.
+   - The app sends a **play event** each time a user starts the presentation, capturing browser, language, timezone, screen resolution, and referrer.
+   - Any **voiceover failure** (ElevenLabs API error, quota exhaustion, audio playback blocked) is logged and posted to Slack in real time. The UI simultaneously disables the voice button and shows a "Voiceover unavailable · refresh to retry" banner so the presenter is never left wondering why narration stopped.
+
 ## Solution architecture
 
 The demo walks through a healthcare scenario where a patient's glucose monitor triggers an end-to-end workflow across multiple Salesforce and partner systems.
@@ -111,15 +116,21 @@ Note: The rendered slide images (`public/rendered/page-*.jpg`) are not checked i
 ## Deploying
 
 ```bash
-# Build and push container
+# Build and push container (use a versioned tag — :latest is cached by App Runner)
+TAG="v$(date +%Y%m%d-%H%M%S)"
 docker build --platform linux/amd64 -t mega-demo .
-aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin <account-id>.dkr.ecr.us-east-1.amazonaws.com
-docker tag mega-demo:latest <account-id>.dkr.ecr.us-east-1.amazonaws.com/mega-demo:latest
-docker push <account-id>.dkr.ecr.us-east-1.amazonaws.com/mega-demo:latest
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 730335577398.dkr.ecr.us-east-1.amazonaws.com
+docker tag mega-demo:latest 730335577398.dkr.ecr.us-east-1.amazonaws.com/mega-demo:$TAG
+docker push 730335577398.dkr.ecr.us-east-1.amazonaws.com/mega-demo:$TAG
 
-# Trigger App Runner redeployment
-aws apprunner start-deployment --service-arn <service-arn> --region us-east-1
+# Update App Runner to the new versioned image
+aws apprunner update-service \
+  --region us-east-1 \
+  --service-arn arn:aws:apprunner:us-east-1:730335577398:service/mega-demo/1715cd08ce1248c4aced5d4fb4b98efd \
+  --source-configuration "{\"ImageRepository\":{\"ImageIdentifier\":\"730335577398.dkr.ecr.us-east-1.amazonaws.com/mega-demo:$TAG\",\"ImageRepositoryType\":\"ECR\"}}"
 ```
+
+The logging service is a separate SAM project — see [aws-logging-service](https://github.com/congmingwudi/aws-logging-service) for its own deploy instructions.
 
 ## AI tools used across the solution
 
@@ -133,3 +144,4 @@ This demo is itself a showcase of AI-assisted development. Every component — f
 | **Presentation web app** | [Claude Design](https://claude.ai/design) + [Claude Code](https://claude.ai/code) | Claude Design prototyped the slide deck with narrative overlay; Claude Code converted it to a React app with ElevenLabs voiceover, autoplay, and deployed it to AWS |
 | **Voiceover narration** | [ElevenLabs](https://elevenlabs.io) | The default voice is a clone of the presenter's own voice — the demo literally narrates itself |
 | **AWS deployment** | [Claude Code](https://claude.ai/code) | Dockerized the app, pushed to ECR, and deployed to App Runner — all from the CLI in conversation |
+| **Logging & alerting** | [Claude Code](https://claude.ai/code) | Built a serverless Lambda logging API (SAM) that forwards play events and voiceover errors to CloudWatch and Slack `#logs` in real time |

@@ -9,6 +9,7 @@ export default function Autoplay({
   muted,
   interval,
   speaking,
+  voiceoverBlocked,
   voiceSettings,
   slideIndex,
   totalSlides,
@@ -24,6 +25,7 @@ export default function Autoplay({
   muted: boolean;
   interval: number;
   speaking: boolean;
+  voiceoverBlocked: boolean;
   voiceSettings: VoiceSettings;
   slideIndex: number;
   totalSlides: number;
@@ -83,33 +85,48 @@ export default function Autoplay({
 
       <Divider />
 
-      {/* Mute / Unmute */}
+      {/* Mute / Unmute — disabled when voiceover is blocked */}
       <button
-        onClick={onToggleMute}
-        title={muted ? 'Unmute (M)' : 'Mute (M)'}
+        onClick={voiceoverBlocked ? undefined : onToggleMute}
+        title={voiceoverBlocked ? 'Voiceover unavailable — refresh to retry' : (muted ? 'Unmute (M)' : 'Mute (M)')}
         style={{
           ...btnStyle,
           padding: '0 10px',
           gap: 5,
           fontSize: 11,
-          color: muted ? 'rgba(255,255,255,0.35)' : (speaking ? '#FE9339' : 'rgba(255,255,255,0.72)'),
-          background: !muted && speaking ? 'rgba(254,147,57,0.15)' : 'transparent',
+          color: voiceoverBlocked
+            ? 'rgba(255,255,255,0.2)'
+            : (muted ? 'rgba(255,255,255,0.35)' : (speaking ? '#FE9339' : 'rgba(255,255,255,0.72)')),
+          background: !voiceoverBlocked && !muted && speaking ? 'rgba(254,147,57,0.15)' : 'transparent',
+          cursor: voiceoverBlocked ? 'not-allowed' : 'pointer',
         }}
       >
         <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M8 2L4 5.5H1.5v5H4L8 14V2z" fill={muted ? 'none' : 'currentColor'} />
-          {!muted && (
+          <path d="M8 2L4 5.5H1.5v5H4L8 14V2z" fill={muted || voiceoverBlocked ? 'none' : 'currentColor'} />
+          {!muted && !voiceoverBlocked && (
             <>
               <path d="M11 5.5a3.5 3.5 0 010 5" />
               <path d="M13 3.5a6.5 6.5 0 010 9" />
             </>
           )}
-          {muted && (
+          {(muted || voiceoverBlocked) && (
             <path d="M11 5.5l4 5M15 5.5l-4 5" />
           )}
         </svg>
-        <span>{muted ? 'Muted' : (speaking ? 'Speaking…' : 'Voice')}</span>
+        <span>{voiceoverBlocked ? 'Unavailable' : (muted ? 'Muted' : (speaking ? 'Speaking…' : 'Voice'))}</span>
       </button>
+
+      {/* Blocked banner */}
+      {voiceoverBlocked && (
+        <span style={{
+          padding: '0 10px',
+          fontSize: 10,
+          color: 'rgba(255,100,100,0.8)',
+          letterSpacing: '0.04em',
+        }}>
+          Voiceover unavailable · refresh to retry
+        </span>
+      )}
 
       {/* Voice picker */}
       <VoicePicker

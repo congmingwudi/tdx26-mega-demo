@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { NARRATIVE, type HighlightRegion, type SaySegment } from '../data/narrative-data';
+import { logError } from './useLogger';
 
 // ---------- Provider interface ----------
 
@@ -29,6 +30,10 @@ const DEFAULT_SETTINGS: VoiceSettings = {
 // one audio play. We unlock by playing a silent audio on the first click.
 let audioUnlocked = false;
 const audioContext = typeof AudioContext !== 'undefined' ? new AudioContext() : null;
+// Shared audio element created during the user gesture. iOS Safari unlocks a
+// specific HTMLAudioElement when play() is called from a gesture; reusing this
+// same element for all TTS keeps it permanently unlocked across slides.
+let sharedAudio: HTMLAudioElement | null = null;
 
 export function unlockAudio() {
   if (audioUnlocked) return;
@@ -37,17 +42,28 @@ export function unlockAudio() {
   if (audioContext?.state === 'suspended') {
     audioContext.resume();
   }
-  // Also play a silent HTML audio to unlock HTMLAudioElement playback
-  const silence = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=');
-  silence.volume = 0;
-  silence.play().catch(() => {});
+  // Create and retain the audio element during the gesture so iOS keeps it unlocked.
+  sharedAudio = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=');
+  sharedAudio.play().catch(() => {});
 }
 
 // ---------- ElevenLabs provider ----------
 
-function createElevenLabsProvider(settings: VoiceSettings): VoiceoverProvider {
-  let audio: HTMLAudioElement | null = null;
+function createElevenLabsProvider(
+  settings: VoiceSettings,
+  onBlocked: () => void,
+): VoiceoverProvider {
   let abortController: AbortController | null = null;
+  // Track whether stop() was called so the play promise knows to bail out
+  let stopped = false;
+
+  function getAudio(): HTMLAudioElement {
+    // Reuse the element unlocked during the gesture; fall back to a new one
+    // if unlockAudio was never called (e.g. desktop where gesture isn't required).
+    if (sharedAudio) return sharedAudio;
+    sharedAudio = new Audio();
+    return sharedAudio;
+  }
 
   return {
     async speak(text: string) {
@@ -55,11 +71,10 @@ function createElevenLabsProvider(settings: VoiceSettings): VoiceoverProvider {
 
       // Cancel any in-flight request or playing audio from this provider
       abortController?.abort();
-      if (audio) {
-        audio.pause();
-        audio.currentTime = 0;
-        audio = null;
-      }
+      stopped = false;
+      const audio = getAudio();
+      audio.pause();
+      audio.removeAttribute('src');
 
       abortController = new AbortController();
 
@@ -80,36 +95,60 @@ function createElevenLabsProvider(settings: VoiceSettings): VoiceoverProvider {
         });
       } catch (e: any) {
         if (e.name === 'AbortError') return;
-        console.error('[ElevenLabs] TTS fetch error:', e);
-        // Wait instead of resolving instantly — prevents rapid-fire advance
-        await new Promise(() => {}); // never resolves (caller must abort)
+        const msg = `ElevenLabs TTS fetch failed: ${e?.message ?? e}`;
+        console.error('[ElevenLabs]', msg);
+        logError(msg);
+        onBlocked();
+        await new Promise(() => {}); // never resolves — caller must abort
         return;
       }
 
       if (!resp.ok) {
-        console.error('[ElevenLabs] TTS request failed:', resp.status);
-        // Don't resolve — wait forever so slides don't rapid-advance on error
-        await new Promise(() => {});
+        const detail = `HTTP ${resp.status}`;
+        const msg = `ElevenLabs TTS request failed: ${detail}`;
+        console.error('[ElevenLabs]', msg);
+        logError(msg, detail);
+        onBlocked();
+        await new Promise(() => {}); // never resolves — caller must abort
         return;
       }
 
+      if (stopped) return;
+
       const blob = await resp.blob();
       const url = URL.createObjectURL(blob);
-      audio = new Audio(url);
 
       return new Promise<void>((resolve) => {
-        audio!.onended = () => { URL.revokeObjectURL(url); audio = null; resolve(); };
-        audio!.onerror = () => { URL.revokeObjectURL(url); audio = null; resolve(); };
-        audio!.play().catch(() => { URL.revokeObjectURL(url); audio = null; resolve(); });
+        audio.onended = () => { URL.revokeObjectURL(url); resolve(); };
+        audio.onerror = () => {
+          URL.revokeObjectURL(url);
+          const msg = 'ElevenLabs audio playback error';
+          console.error('[ElevenLabs]', msg);
+          logError(msg);
+          onBlocked();
+          // Do not resolve — prevents rapid-fire advancement on mobile
+        };
+        audio.src = url;
+        audio.currentTime = 0;
+        audio.play().catch((err) => {
+          URL.revokeObjectURL(url);
+          const msg = `ElevenLabs audio.play() failed: ${err?.message ?? err}`;
+          console.error('[ElevenLabs]', msg);
+          logError(msg);
+          onBlocked();
+          // Do not resolve — prevents rapid-fire advancement on mobile
+        });
       });
     },
     stop() {
+      stopped = true;
       abortController?.abort();
       abortController = null;
-      if (audio) {
-        audio.pause();
-        audio.currentTime = 0;
-        audio = null;
+      if (sharedAudio) {
+        sharedAudio.pause();
+        sharedAudio.onended = null;
+        sharedAudio.onerror = null;
+        sharedAudio.removeAttribute('src');
       }
     },
   };
@@ -152,8 +191,6 @@ export async function fetchElevenLabsVoices(): Promise<ElevenLabsVoice[]> {
 // ---------- Main hook ----------
 
 interface SlideScript {
-  // If segments are present, speak them one by one with highlight callbacks.
-  // Otherwise, speak the full text as a single block.
   segments?: SaySegment[];
   fullText: string;
 }
@@ -164,7 +201,6 @@ function getSlideScript(index: number): SlideScript | null {
   const saySections = entry.sections.filter(s => s.kind === 'say');
   if (saySections.length === 0) return null;
 
-  // If any say section has segments, use those
   for (const s of saySections) {
     if (s.segments && s.segments.length > 0) {
       return { segments: s.segments, fullText: s.text };
@@ -177,6 +213,7 @@ function getSlideScript(index: number): SlideScript | null {
 
 export function useVoiceover() {
   const [speaking, setSpeaking] = useState(false);
+  const [voiceoverBlocked, setVoiceoverBlocked] = useState(false);
   const [highlight, setHighlight] = useState<HighlightRegion | null>(null);
   const [settings, setSettings] = useState<VoiceSettings>(() => {
     try {
@@ -189,17 +226,18 @@ export function useVoiceover() {
     return DEFAULT_SETTINGS;
   });
 
-  const providerRef = useRef<VoiceoverProvider>(createElevenLabsProvider(settings));
+  const onBlocked = useCallback(() => setVoiceoverBlocked(true), []);
+  const providerRef = useRef<VoiceoverProvider>(createElevenLabsProvider(settings, onBlocked));
   const abortRef = useRef(false);
   const onDoneRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     providerRef.current.stop();
-    providerRef.current = createElevenLabsProvider(settings);
+    providerRef.current = createElevenLabsProvider(settings, onBlocked);
     setSpeaking(false);
     setHighlight(null);
     try { localStorage.setItem('voiceover-settings', JSON.stringify(settings)); } catch {}
-  }, [settings]);
+  }, [settings, onBlocked]);
 
   const stop = useCallback(() => {
     abortRef.current = true;
@@ -224,7 +262,6 @@ export function useVoiceover() {
     setSpeaking(true);
 
     if (script.segments && script.segments.length > 0) {
-      // Speak segments sequentially with highlights
       (async () => {
         for (const seg of script.segments!) {
           if (abortRef.current) return;
@@ -239,7 +276,6 @@ export function useVoiceover() {
         }
       })();
     } else {
-      // Single block speech
       providerRef.current.speak(script.fullText).then(() => {
         if (!abortRef.current) {
           setSpeaking(false);
@@ -253,13 +289,13 @@ export function useVoiceover() {
     providerRef.current.stop();
     setSpeaking(false);
     setHighlight(null);
-    const provider = createElevenLabsProvider({ ...settings, voiceId });
+    const provider = createElevenLabsProvider({ ...settings, voiceId }, onBlocked);
     provider.speak('System of Context. One platform, one source of truth.');
-  }, [settings]);
+  }, [settings, onBlocked]);
 
   useEffect(() => {
     return () => { providerRef.current.stop(); };
   }, []);
 
-  return { speaking, highlight, speakSlide, stop, settings, setSettings, preview };
+  return { speaking, voiceoverBlocked, highlight, speakSlide, stop, settings, setSettings, preview };
 }

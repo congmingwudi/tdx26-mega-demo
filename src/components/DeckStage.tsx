@@ -17,6 +17,7 @@ import {
   trackSlideJump,
   trackPresentationComplete,
 } from '../hooks/useDataCloud';
+import { logPlay } from '../hooks/useLogger';
 
 export default function DeckStage() {
   useDataCloudInit();
@@ -109,7 +110,9 @@ export default function DeckStage() {
     unlockAudio(); // Must run synchronously in the click handler
     setPlaying(p => {
       if (!p) {
-        trackPlay(deckRef.current ? (deckRef.current as any).index : 0);
+        const idx = deckRef.current ? (deckRef.current as any).index : 0;
+        trackPlay(idx);
+        logPlay(idx);
         const deck = deckRef.current as any;
         if (deck && deck.index >= deck.length - 1) {
           deck.goTo(0);
@@ -175,6 +178,7 @@ export default function DeckStage() {
         muted={muted}
         interval={interval}
         speaking={voiceover.speaking}
+        voiceoverBlocked={voiceover.voiceoverBlocked}
         voiceSettings={voiceover.settings}
         slideIndex={slideIndex}
         totalSlides={TOTAL_SLIDES}
