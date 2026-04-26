@@ -103,7 +103,7 @@ function BuildFlow() {
     { n: '2', tool: 'Claude Code', action: 'React 19 + TS + Tailwind + ElevenLabs TTS', highlight: true },
     { n: '3', tool: 'Claude Code', action: 'Docker → Amazon ECR → AWS App Runner', highlight: true },
     { n: '4', tool: 'Claude Code', action: 'Lambda + API Gateway logging → CloudWatch + Slack', highlight: true },
-    { n: '5', tool: 'Claude Code', action: 'Solution Guide panel + Kiosk mode (this chat!)', highlight: true },
+    { n: '5', tool: 'Claude Code', action: 'Solution Guide + Kiosk · model selector · SF Models API + Claude Direct', highlight: true },
   ];
 
   return (
@@ -152,21 +152,20 @@ function BuildFlow() {
 function RuntimeArch() {
   return (
     <Group title="Runtime architecture">
-      <div style={{ display: 'flex', alignItems: 'stretch', gap: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'stretch', gap: 8 }}>
 
         {/* Browser */}
         <div style={{
           background: CARD, border: `1px solid ${CARD_BORDER}`, borderRadius: 10, padding: '10px 14px',
-          display: 'flex', flexDirection: 'column', gap: 6, minWidth: 180, flexShrink: 0,
+          display: 'flex', flexDirection: 'column', gap: 6, minWidth: 160, flexShrink: 0,
         }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: MUTED, letterSpacing: '0.06em', textTransform: 'uppercase' as const }}>Browser</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: MUTED, letterSpacing: '0.06em', textTransform: 'uppercase' as const }}>Browser</div>
           <div style={{ fontSize: 15, fontWeight: 700, color: '#fff' }}>React App</div>
-          <div style={{ fontSize: 12, color: MUTED, lineHeight: 1.4 }}>
+          <div style={{ fontSize: 11, color: MUTED, lineHeight: 1.4 }}>
             Slide deck<br />
-            Narrative overlay<br />
-            Autoplay controls<br />
-            Solution Guide panel<br />
-            Kiosk mode
+            Autoplay · TTS<br />
+            Solution Guide<br />
+            Kiosk · Model selector
           </div>
         </div>
 
@@ -177,22 +176,33 @@ function RuntimeArch() {
           background: CARD, border: `1px solid ${CARD_BORDER}`, borderRadius: 10, padding: '10px 14px',
           display: 'flex', flexDirection: 'column', gap: 8, flex: 1,
         }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: MUTED, letterSpacing: '0.06em', textTransform: 'uppercase' as const }}>
-            AWS App Runner · us-east-1
+          <div style={{ fontSize: 11, fontWeight: 700, color: MUTED, letterSpacing: '0.06em', textTransform: 'uppercase' as const }}>
+            AWS App Runner · us-west-2
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 6 }}>
             <Box title="Express :8080" subtitle="Static dist/ assets" style={{ flex: 1 }} />
-            <Box title="ElevenLabs Proxy" subtitle="POST /api/elevenlabs/tts" highlight style={{ flex: 1 }} />
-            <Box title="Claude Proxy" subtitle="POST /api/claude/chat  SSE stream" highlight style={{ flex: 1 }} />
+            <Box title="ElevenLabs Proxy" subtitle="/api/elevenlabs/tts" highlight style={{ flex: 1 }} />
+            <Box title="Claude Proxy" subtitle="/api/claude/chat · SSE" highlight style={{ flex: 1 }} />
+            <Box title="SF Models Proxy" subtitle="/api/sf-models/chat · OAuth · simulated SSE" highlight style={{ flex: 1 }} />
           </div>
         </div>
 
         <Arrow label="API" />
 
         {/* External APIs */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minWidth: 160, flexShrink: 0 }}>
-          <Box title="ElevenLabs" subtitle="Voice synthesis (cloned)" highlight />
-          <Box title="Anthropic" subtitle="claude-opus-4-7 streaming" highlight />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0 }}>
+          <Box title="ElevenLabs" subtitle="Voice synthesis" highlight style={{ minWidth: 140 }} />
+          <Box title="Anthropic" subtitle="Claude Direct · SSE" highlight style={{ minWidth: 140 }} />
+          <div style={{
+            background: ORANGE_DIM, border: `1px solid ${ORANGE_BORDER}`, borderRadius: 10, padding: '8px 12px', minWidth: 140,
+          }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: ORANGE, lineHeight: 1.2 }}>Salesforce Org</div>
+            <div style={{ fontSize: 11, color: MUTED, marginTop: 3, lineHeight: 1.35 }}>
+              OAuth 2.0 Client Credentials<br />
+              Models API · ~15 models<br />
+              Claude · GPT · Gemini · Nova
+            </div>
+          </div>
         </div>
 
         <Arrow label="POST /log" />
@@ -200,14 +210,14 @@ function RuntimeArch() {
         {/* Logging */}
         <div style={{
           background: CARD, border: `1px solid ${CARD_BORDER}`, borderRadius: 10, padding: '10px 14px',
-          display: 'flex', flexDirection: 'column', gap: 8, minWidth: 170, flexShrink: 0,
+          display: 'flex', flexDirection: 'column', gap: 6, minWidth: 150, flexShrink: 0,
         }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: MUTED, letterSpacing: '0.06em', textTransform: 'uppercase' as const }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: MUTED, letterSpacing: '0.06em', textTransform: 'uppercase' as const }}>
             AWS · us-west-2
           </div>
           <Box title="API Gateway" subtitle="X-Api-Key auth" />
           <Box title="Lambda" subtitle="mega-demo-logger" />
-          <Box title="CloudWatch + Slack" subtitle="Play events · errors" />
+          <Box title="CloudWatch + Slack" subtitle="Play · Guide · Kiosk · errors" />
         </div>
 
       </div>
@@ -274,7 +284,7 @@ export default function ArchSlide() {
           {[
             ['Frontend', 'React 19 · TypeScript · Vite 8 · Tailwind CSS v4'],
             ['Voiceover', 'ElevenLabs · cloned presenter voice · server-side proxy'],
-            ['Chat', 'claude-opus-4-7 · Anthropic SDK · SSE streaming'],
+            ['Chat', 'Claude Direct (Anthropic SDK · SSE) or SF Models API (OAuth · ~15 models)'],
             ['Deploy', 'Docker · Amazon ECR · AWS App Runner · SAM Lambda'],
           ].map(([k, v]) => (
             <div key={k}>

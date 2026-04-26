@@ -3,6 +3,8 @@ import { useClaude, type ChatMessage } from '../hooks/useClaude';
 import { NARRATIVE } from '../data/narrative-data';
 import { DEFAULT_MODEL, getModel } from '../data/models';
 import ModelSelector from './ModelSelector';
+import MermaidDiagram from './MermaidDiagram';
+import { BUILD_FLOW_DIAGRAM, RUNTIME_DIAGRAM } from '../data/architecture-diagrams';
 
 const CLAUDE_ORANGE = '#FF6B35';
 const CLAUDE_GRADIENT = 'linear-gradient(135deg, #FF6B35 0%, #FF9A5C 100%)';
@@ -42,10 +44,27 @@ ${allSay}
 Answer questions about what's shown in this demo — how the technology works, why specific design choices were made, and how it relates to real-world Salesforce implementations. Be specific and insightful. Keep answers concise (2–4 sentences unless asked to elaborate). You can reference other slides if relevant. Speak as a knowledgeable Salesforce/data architecture expert.`;
 }
 
+const ARCHITECTURE_TRIGGERS = [
+  'how was this presentation',
+  'how was this app built',
+  'how was this demo built',
+  'how was it built',
+  'how did you build',
+  'build flow',
+  'runtime architecture',
+  'how is this built',
+];
+
+function isArchitectureQuestion(text: string): boolean {
+  const lower = text.toLowerCase();
+  return ARCHITECTURE_TRIGGERS.some(t => lower.includes(t));
+}
+
 interface Message {
   role: 'user' | 'assistant';
   content: string;
   streaming?: boolean;
+  diagrams?: boolean;
 }
 
 export default function AskClaude({
@@ -58,7 +77,7 @@ export default function AskClaude({
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [modelId, setModelId] = useState(DEFAULT_MODEL.id);
-  const { chat, stop, streaming } = useClaude();
+  const { chat, stop, streaming, waiting } = useClaude();
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -86,6 +105,11 @@ export default function AskClaude({
       role: m.role,
       content: m.content,
     }));
+
+    // Show architecture diagrams immediately for build-related questions while LLM thinks.
+    if (isArchitectureQuestion(text)) {
+      setMessages(prev => [...prev, { role: 'assistant', content: '', diagrams: true }]);
+    }
 
     setMessages(prev => [...prev, { role: 'assistant', content: '', streaming: true }]);
 
@@ -235,41 +259,54 @@ export default function AskClaude({
 
         {messages.map((msg, i) => (
           <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <div style={{
-              fontSize: 10,
-              fontWeight: 600,
-              letterSpacing: '0.06em',
-              textTransform: 'uppercase',
-              color: msg.role === 'user' ? 'rgba(255,255,255,0.35)' : CLAUDE_ORANGE,
-              marginBottom: 3,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 5,
-            }}>
-              {msg.role === 'assistant' && <ClaudeLogo size={12} />}
-              {msg.role === 'user' ? 'You' : 'Claude'}
-            </div>
-            <div style={{
-              lineHeight: 1.55,
-              color: msg.role === 'user' ? 'rgba(255,255,255,0.85)' : '#e8e8e8',
-              background: msg.role === 'user' ? 'rgba(255,255,255,0.05)' : 'transparent',
-              borderRadius: msg.role === 'user' ? 8 : 0,
-              padding: msg.role === 'user' ? '8px 10px' : 0,
-              whiteSpace: 'pre-wrap',
-            }}>
-              {msg.content}
-              {msg.streaming && (
-                <span style={{
-                  display: 'inline-block',
-                  width: 6,
-                  height: 13,
-                  background: CLAUDE_ORANGE,
-                  marginLeft: 2,
-                  borderRadius: 1,
-                  animation: 'blink 0.8s step-end infinite',
-                }} />
-              )}
-            </div>
+            {!msg.diagrams && (
+              <div style={{
+                fontSize: 10,
+                fontWeight: 600,
+                letterSpacing: '0.06em',
+                textTransform: 'uppercase',
+                color: msg.role === 'user' ? 'rgba(255,255,255,0.35)' : CLAUDE_ORANGE,
+                marginBottom: 3,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 5,
+              }}>
+                {msg.role === 'assistant' && <ClaudeLogo size={12} />}
+                {msg.role === 'user' ? 'You' : 'Claude'}
+              </div>
+            )}
+            {msg.diagrams ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <MermaidDiagram chart={BUILD_FLOW_DIAGRAM} label="Build Flow" />
+                <MermaidDiagram chart={RUNTIME_DIAGRAM} label="Runtime Architecture" />
+              </div>
+            ) : (
+              <div style={{
+                lineHeight: 1.55,
+                color: msg.role === 'user' ? 'rgba(255,255,255,0.85)' : '#e8e8e8',
+                background: msg.role === 'user' ? 'rgba(255,255,255,0.05)' : 'transparent',
+                borderRadius: msg.role === 'user' ? 8 : 0,
+                padding: msg.role === 'user' ? '8px 10px' : 0,
+                whiteSpace: 'pre-wrap',
+              }}>
+                {msg.streaming && waiting && !msg.content ? (
+                  <span style={{ color: 'rgba(255,255,255,0.35)', fontStyle: 'italic', fontSize: 12 }}>
+                    Thinking…
+                  </span>
+                ) : renderMarkdown(msg.content)}
+                {msg.streaming && !waiting && (
+                  <span style={{
+                    display: 'inline-block',
+                    width: 6,
+                    height: 13,
+                    background: CLAUDE_ORANGE,
+                    marginLeft: 2,
+                    borderRadius: 1,
+                    animation: 'blink 0.8s step-end infinite',
+                  }} />
+                )}
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -407,6 +444,16 @@ function getSuggestedQuestions(_slideIndex: number, phase: string): string[] {
     if (phase.toLowerCase().includes(key.toLowerCase())) return [...qs, ...base].slice(0, 3);
   }
   return [...base, "What Salesforce products are involved in this step?"].slice(0, 3);
+}
+
+function renderMarkdown(text: string): React.ReactNode[] {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={i} style={{ fontWeight: 700, color: '#fff' }}>{part.slice(2, -2)}</strong>;
+    }
+    return part;
+  });
 }
 
 function ClaudeLogo({ size = 20, style }: { size?: number; style?: React.CSSProperties }) {

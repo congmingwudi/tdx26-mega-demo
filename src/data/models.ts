@@ -8,6 +8,26 @@ export interface ModelOption {
 }
 
 export const MODELS: ModelOption[] = [
+  // ── Direct Claude (Anthropic API) ──────────────────────────────────────────
+  {
+    id: 'claude-opus-4-7',
+    label: 'Claude Opus 4.7',
+    provider: 'claude',
+    group: 'Claude (Direct)',
+  },
+  {
+    id: 'claude-sonnet-4-6',
+    label: 'Claude Sonnet 4.6',
+    provider: 'claude',
+    group: 'Claude (Direct)',
+  },
+  {
+    id: 'claude-haiku-4-5',
+    label: 'Claude Haiku 4.5',
+    provider: 'claude',
+    group: 'Claude (Direct)',
+  },
+
   // ── Anthropic via Salesforce Models API (Amazon Bedrock) ───────────────────
   {
     id: 'sfdc_ai__DefaultBedrockAnthropicClaude46Sonnet',
@@ -118,28 +138,9 @@ export const MODELS: ModelOption[] = [
     group: 'Amazon via Salesforce',
   },
 
-  // ── Direct Claude (Anthropic API) ──────────────────────────────────────────
-  {
-    id: 'claude-opus-4-7',
-    label: 'Claude Opus 4.7',
-    provider: 'claude',
-    group: 'Claude (Direct)',
-  },
-  {
-    id: 'claude-sonnet-4-6',
-    label: 'Claude Sonnet 4.6',
-    provider: 'claude',
-    group: 'Claude (Direct)',
-  },
-  {
-    id: 'claude-haiku-4-5',
-    label: 'Claude Haiku 4.5',
-    provider: 'claude',
-    group: 'Claude (Direct)',
-  },
 ];
 
-export const DEFAULT_MODEL = MODELS.find(m => m.id === 'sfdc_ai__DefaultBedrockAnthropicClaude46Sonnet')!;
+export const DEFAULT_MODEL = MODELS.find(m => m.id === 'claude-sonnet-4-6')!;
 
 export function getModel(id: string): ModelOption {
   return MODELS.find(m => m.id === id) ?? DEFAULT_MODEL;

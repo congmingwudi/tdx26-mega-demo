@@ -80,8 +80,19 @@
       position: relative;
       transform-origin: center center;
       flex-shrink: 0;
-      background: #fff;
+      background: #000;
       will-change: transform;
+      border-radius: 48px;
+      overflow: hidden;
+    }
+
+    .canvas-frame {
+      position: absolute;
+      inset: 0;
+      border-radius: 48px;
+      box-shadow: inset 0 0 0 20px #000;
+      z-index: 10;
+      pointer-events: none;
     }
 
     /* Slides live in light DOM (via <slot>) so authored CSS still applies.
@@ -339,6 +350,11 @@
       const slot = document.createElement('slot');
       slot.addEventListener('slotchange', this._onSlotChange);
       canvas.appendChild(slot);
+
+      const frame = document.createElement('div');
+      frame.className = 'canvas-frame';
+      canvas.appendChild(frame);
+
       stage.appendChild(canvas);
 
       // Tap zones (mobile): left third = back, right third = forward.
@@ -445,7 +461,7 @@
         slide.setAttribute('data-deck-slide', String(i));
       });
 
-      if (this._totalEl) this._totalEl.textContent = String(this._slides.length || 1);
+      if (this._totalEl) this._totalEl.textContent = String((this._slides.length || 1) - 1);
       if (this._index >= this._slides.length) this._index = Math.max(0, this._slides.length - 1);
     }
 
@@ -486,7 +502,7 @@
         if (i === curr) s.setAttribute('data-deck-active', '');
         else s.removeAttribute('data-deck-active');
       });
-      if (this._countEl) this._countEl.textContent = String(curr + 1);
+      if (this._countEl) this._countEl.textContent = String(curr);
       this._persistIndex();
 
       if (broadcast) {

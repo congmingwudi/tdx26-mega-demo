@@ -4,6 +4,8 @@ import { NARRATIVE } from '../data/narrative-data';
 import { SLIDE_LABELS, TOTAL_SLIDES } from '../data/slides';
 import { DEFAULT_MODEL, getModel } from '../data/models';
 import ModelSelector from './ModelSelector';
+import MermaidDiagram from './MermaidDiagram';
+import { BUILD_FLOW_DIAGRAM, RUNTIME_DIAGRAM } from '../data/architecture-diagrams';
 
 const CLAUDE_ORANGE = '#FF6B35';
 
@@ -56,10 +58,27 @@ The app is deployed at bit.ly/tdx26-mega-demo. The GitHub repos are github.com/c
 - You can suggest they watch specific slides to see something in action`;
 }
 
+const ARCHITECTURE_TRIGGERS = [
+  'how was this presentation',
+  'how was this app built',
+  'how was this demo built',
+  'how was it built',
+  'how did you build',
+  'build flow',
+  'runtime architecture',
+  'how is this built',
+];
+
+function isArchitectureQuestion(text: string): boolean {
+  const lower = text.toLowerCase();
+  return ARCHITECTURE_TRIGGERS.some(t => lower.includes(t));
+}
+
 interface Message {
   role: 'user' | 'assistant';
   content: string;
   streaming?: boolean;
+  diagrams?: boolean;
 }
 
 const SUGGESTED_QUESTIONS = [
@@ -82,7 +101,7 @@ export default function KioskMode({
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [modelId, setModelId] = useState(DEFAULT_MODEL.id);
-  const { chat, stop, streaming } = useClaude();
+  const { chat, stop, streaming, waiting } = useClaude();
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -115,6 +134,11 @@ export default function KioskMode({
       role: m.role,
       content: m.content,
     }));
+
+    // Show architecture diagrams immediately for build-related questions while LLM thinks.
+    if (isArchitectureQuestion(msg)) {
+      setMessages(prev => [...prev, { role: 'assistant', content: '', diagrams: true }]);
+    }
 
     setMessages(prev => [...prev, { role: 'assistant', content: '', streaming: true }]);
 
@@ -269,45 +293,59 @@ export default function KioskMode({
             ) : (
               messages.map((msg, i) => (
                 <div key={i} style={{
-                  maxWidth: 720,
+                  maxWidth: msg.diagrams ? '100%' : '80%',
+                  width: msg.diagrams ? '100%' : undefined,
                   alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
                 }}>
-                  <div style={{
-                    fontSize: 10,
-                    fontWeight: 600,
-                    letterSpacing: '0.07em',
-                    textTransform: 'uppercase',
-                    color: msg.role === 'user' ? 'rgba(255,255,255,0.3)' : CLAUDE_ORANGE,
-                    marginBottom: 5,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 5,
-                  }}>
-                    {msg.role === 'assistant' && <MiniLogo />}
-                    {msg.role === 'user' ? 'You' : 'Claude'}
-                  </div>
-                  <div style={{
-                    background: msg.role === 'user' ? 'rgba(255,255,255,0.07)' : 'rgba(255,107,53,0.06)',
-                    border: msg.role === 'user' ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(255,107,53,0.12)',
-                    borderRadius: msg.role === 'user' ? '12px 12px 4px 12px' : '4px 12px 12px 12px',
-                    padding: '12px 16px',
-                    lineHeight: 1.6,
-                    fontSize: 14,
-                    whiteSpace: 'pre-wrap',
-                  }}>
-                    {msg.content}
-                    {msg.streaming && (
-                      <span style={{
-                        display: 'inline-block',
-                        width: 7,
-                        height: 14,
-                        background: CLAUDE_ORANGE,
-                        marginLeft: 2,
-                        borderRadius: 1,
-                        animation: 'blink 0.8s step-end infinite',
-                      }} />
-                    )}
-                  </div>
+                  {!msg.diagrams && (
+                    <div style={{
+                      fontSize: 10,
+                      fontWeight: 600,
+                      letterSpacing: '0.07em',
+                      textTransform: 'uppercase',
+                      color: msg.role === 'user' ? 'rgba(255,255,255,0.3)' : CLAUDE_ORANGE,
+                      marginBottom: 5,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 5,
+                    }}>
+                      {msg.role === 'assistant' && <MiniLogo />}
+                      {msg.role === 'user' ? 'You' : 'Claude'}
+                    </div>
+                  )}
+                  {msg.diagrams ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                      <MermaidDiagram chart={BUILD_FLOW_DIAGRAM} label="Build Flow" />
+                      <MermaidDiagram chart={RUNTIME_DIAGRAM} label="Runtime Architecture" />
+                    </div>
+                  ) : (
+                    <div style={{
+                      background: msg.role === 'user' ? 'rgba(255,255,255,0.07)' : 'rgba(255,107,53,0.06)',
+                      border: msg.role === 'user' ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(255,107,53,0.12)',
+                      borderRadius: msg.role === 'user' ? '12px 12px 4px 12px' : '4px 12px 12px 12px',
+                      padding: '12px 16px',
+                      lineHeight: 1.6,
+                      fontSize: 14,
+                      whiteSpace: 'pre-wrap',
+                    }}>
+                      {msg.streaming && waiting && !msg.content ? (
+                        <span style={{ color: 'rgba(255,255,255,0.35)', fontStyle: 'italic', fontSize: 13 }}>
+                          Thinking…
+                        </span>
+                      ) : renderMarkdown(msg.content)}
+                      {msg.streaming && !waiting && (
+                        <span style={{
+                          display: 'inline-block',
+                          width: 7,
+                          height: 14,
+                          background: CLAUDE_ORANGE,
+                          marginLeft: 2,
+                          borderRadius: 1,
+                          animation: 'blink 0.8s step-end infinite',
+                        }} />
+                      )}
+                    </div>
+                  )}
                 </div>
               ))
             )}
@@ -559,6 +597,17 @@ function SlideSelector({ onGoToSlide }: { onGoToSlide: (i: number) => void }) {
       )}
     </div>
   );
+}
+
+function renderMarkdown(text: string): React.ReactNode[] {
+  // Split on **bold** markers and render bold spans inline.
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={i} style={{ fontWeight: 700, color: '#fff' }}>{part.slice(2, -2)}</strong>;
+    }
+    return part;
+  });
 }
 
 function KioskLogo({ size = 28, style }: { size?: number; style?: React.CSSProperties }) {

@@ -5,15 +5,15 @@ export const SLIDE_LABELS = [
   'Architecture · Work',                            // 4
   'Architecture · Agency',                          // 5
   'Architecture · Engagement',                      // 6
-  'Data Trapped',                                   // 7
-  'Pillars',                                        // 8
+  'Trapped Data',                                    // 7
+  'Trusted Enterprise Context',                      // 8
   'System of Context',                              // 9
   'RT Events → Agent → Slack',                      // 10
   'Document AI',                                    // 11
   'Semantic Model → Tableau',                       // 12
   'Data 360 Agent → Segment',                       // 13
-  'Maria — Informatica Profile',                    // 14
-  'Three Marias — Source Records',                  // 15
+  'Informatica Golden Record',                       // 14
+  'Informatica Source Records',                      // 15
   'Patient 360 Console',                            // 16
   'Real-Time Data Graph',                           // 17
   'GlucoseMonitorEvent Flow',                       // 18
@@ -26,7 +26,7 @@ export const SLIDE_LABELS = [
   'Patient Record · Alerts + Appointments',         // 25
   'Care Agent → MCP Tools',                         // 26
   'Agentforce Registry · MCP',                      // 27
-  'MuleSoft MCP Server · Docs',                     // 28
+  'MuleSoft MCP Server',                             // 28
   'Tableau Next + Analytics Agent',                 // 29
   'Semantic Model Builder',                         // 30
   'D360 Agent → Segment Rules',                     // 31
@@ -42,6 +42,54 @@ export const SLIDE_LABELS = [
   'Built With · Claude Design + Code',              // 41
   'App Architecture · How It Was Built',            // 42
   'Resources',                                      // 43
+];
+
+// Estimated voiceover duration per slide at ~145 WPM (Ryan cloned voice).
+// Index matches SLIDE_LABELS. Format: "M:SS".
+export const SLIDE_DURATIONS = [
+  "0:21", // 00 Title
+  "0:06", // 01 Architecture
+  "0:10", // 02 Architecture · Context
+  "0:08", // 03 Architecture · Work
+  "0:09", // 04 Architecture · Agency
+  "0:16", // 05 Architecture · Engagement
+  "0:16", // 06 Trapped Data
+  "0:12", // 07 Trusted Enterprise Context
+  "0:11", // 08 System of Context
+  "0:13", // 09 RT Events → Agent → Slack
+  "0:15", // 10 Document AI
+  "0:11", // 11 Semantic Model → Tableau
+  "0:11", // 12 Data 360 Agent → Segment
+  "0:15", // 13 Informatica Golden Record
+  "0:14", // 14 Informatica Source Records
+  "0:11", // 15 Patient 360 Console
+  "0:18", // 16 Real-Time Data Graph
+  "0:11", // 17 GlucoseMonitorEvent Flow
+  "0:15", // 18 Glucose Event → Care Agent
+  "0:16", // 19 Care Agent · Autonomous Assistant
+  "0:14", // 20 Agent Action → Slack Message
+  "0:18", // 21 Slack · #care-alerts
+  "0:15", // 22 Slack · Approve Care Plan
+  "0:13", // 23 Slackbot → Health Cloud
+  "0:13", // 24 Patient Record · Alerts + Appointments
+  "0:10", // 25 Care Agent → MCP Tools
+  "0:09", // 26 Agentforce Registry · MCP
+  "0:13", // 27 MuleSoft MCP Server
+  "0:15", // 28 Tableau Next + Analytics Agent
+  "0:12", // 29 Semantic Model Builder
+  "0:14", // 30 D360 Agent → Segment Rules
+  "0:14", // 31 Privacy Center · Consent
+  "0:14", // 32 Data Governance · PHI
+  "0:12", // 33 Shield · Encryption
+  "0:10", // 34 Architecture Recap
+  "0:07", // 35 Thank You
+  "0:11", // 36 How Was This Built?
+  "0:14", // 37 Built With · Glucose Monitor
+  "0:17", // 38 Built With · MeshMesh
+  "0:14", // 39 Built With · Cursor
+  "0:23", // 40 Built With · Claude Design + Code
+  "0:39", // 41 App Architecture · How It Was Built
+  "0:15", // 42 Resources
 ];
 
 export const DARK_SLIDES = new Set([1, 22, 23, 36, 37, 42, 43]);

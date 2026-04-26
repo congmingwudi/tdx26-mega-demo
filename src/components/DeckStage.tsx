@@ -153,11 +153,25 @@ export default function DeckStage() {
     });
   }, [voiceover.stop]);
 
-  // Slide 42 (index 41) is a custom React-rendered slide — no background image
+  // Slide 42 (index 41) is a custom React-rendered slide — no background image.
+  // Slide 43 (index 42) reuses page-42.jpg since the arch slide has no image file.
   const ARCH_SLIDE_INDEX = 41;
 
+  // Custom image overrides: key = 0-based index, value = filename in /rendered/
+  const CUSTOM_IMAGES: Record<number, string> = {
+    6:  'trapped-data.png',
+    9:  'arch-realtime-events.png',
+    11: 'arch-tableau.png',
+    12: 'arch-marketing.png',
+    23: 'slackbot.png',
+    24: 'update-patient-record.png',
+  };
+
   const slides = Array.from({ length: TOTAL_SLIDES }, (_, i) => {
-    const num = String(i + 1).padStart(2, '0');
+    const imgNum = i > ARCH_SLIDE_INDEX ? i : i + 1; // shift image numbers after arch slide
+    const num = String(i).padStart(2, '0');
+    const imgNumStr = String(imgNum).padStart(2, '0');
+    const imgSrc = CUSTOM_IMAGES[i] ?? `page-${imgNumStr}.jpg`;
     const label = SLIDE_LABELS[i];
     const isDark = DARK_SLIDES.has(i + 1);
 
@@ -172,7 +186,7 @@ export default function DeckStage() {
           {i === slideIndex && <SlideLinks slideIndex={slideIndex} />}
           <div className="slide-chrome">
             <span>{label}</span>
-            <span>{num} / {TOTAL_SLIDES}</span>
+            <span>{num} / {TOTAL_SLIDES - 1}</span>
           </div>
         </section>
       );
@@ -182,7 +196,7 @@ export default function DeckStage() {
       <section
         key={i}
         className={`slide-img${isDark ? ' dark' : ''}`}
-        style={{ backgroundImage: `url("/rendered/page-${num}.jpg")` }}
+        style={{ backgroundImage: `url("/rendered/${imgSrc}")` }}
         data-screen-label={`${num} ${label}`}
       >
         {i === slideIndex && <SlideHighlight region={voiceover.highlight} />}

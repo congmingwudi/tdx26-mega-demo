@@ -534,7 +534,7 @@ export const NARRATIVE: NarrativeEntry[] = [
     time: "9:15",
     sections: [
       { label: "Say", kind: "say",
-        text: "And here's a look under the hood of this presentation app itself. Four steps to build it: Claude Design prototyped the slide deck from the PDF and speaker script. Claude Code converted that into a React app with ElevenLabs voiceover, deployed it to AWS App Runner via Docker and ECR, and built a serverless logging service on Lambda. At runtime, the Express server proxies ElevenLabs and Claude, so neither API key ever reaches the browser. And yes — this very chat is part of the same app, powered by claude-opus-4-7 streaming through that same proxy." },
+        text: "And here's a look under the hood of this presentation app itself. Four steps to build it: Claude Design prototyped the slide deck from the PDF and speaker script. Claude Code converted that into a React app with ElevenLabs voiceover, deployed it to AWS App Runner via Docker and ECR, and built a serverless logging service on Lambda. At runtime, the Express server proxies ElevenLabs, Claude direct, and the Salesforce Models API — giving access to Claude, GPT, Gemini, and Amazon Nova through the Einstein Trust Layer — so no API key or token ever reaches the browser. And yes — this very chat is part of the same app, with a model selector to switch between all of them." },
       { label: "Note", kind: "note",
         text: "This is the meta slide — the presentation explains how it built itself. A great moment to pause and let it land." }
     ]

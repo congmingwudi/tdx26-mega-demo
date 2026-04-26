@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import VoicePicker from './VoicePicker';
 import type { VoiceSettings } from '../hooks/useVoiceover';
+import { SLIDE_DURATIONS } from '../data/slides';
 
 const SPEEDS = [1, 2, 3, 5, 10, 15, 30];
 
@@ -230,6 +231,15 @@ function SlideJump({
   const panelRef = useRef<HTMLDivElement>(null);
   const activeRef = useRef<HTMLButtonElement>(null);
 
+  const totalRunTime = (() => {
+    const totalSec = SLIDE_DURATIONS.reduce((acc, d) => {
+      const [m, s] = d.split(':').map(Number);
+      return acc + m * 60 + s;
+    }, 0);
+    const m = Math.floor(totalSec / 60), s = totalSec % 60;
+    return `${m}:${String(s).padStart(2, '0')}`;
+  })();
+
   // Close on outside click
   useEffect(() => {
     if (!open) return;
@@ -265,7 +275,7 @@ function SlideJump({
         }}
       >
         <span style={{ fontVariantNumeric: 'tabular-nums' }}>
-          {pad(slideIndex + 1)} / {pad(totalSlides)}
+          {pad(slideIndex)} / {pad(totalSlides - 1)}
         </span>
         <svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor" style={{ flexShrink: 0, opacity: 0.5 }}>
           <path d="M1 3l3 3 3-3" />
@@ -293,14 +303,27 @@ function SlideJump({
           <div style={{
             padding: '10px 14px',
             borderBottom: '1px solid rgba(255,255,255,0.08)',
-            fontSize: 10,
-            fontWeight: 600,
-            letterSpacing: '0.1em',
-            textTransform: 'uppercase',
-            color: 'rgba(255,255,255,0.4)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
             flexShrink: 0,
           }}>
-            Jump to Slide
+            <span style={{
+              fontSize: 10,
+              fontWeight: 600,
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              color: 'rgba(255,255,255,0.4)',
+            }}>
+              Jump to Slide
+            </span>
+            <span style={{
+              fontSize: 10,
+              fontVariantNumeric: 'tabular-nums',
+              color: 'rgba(255,255,255,0.3)',
+            }}>
+              ~{totalRunTime} full run
+            </span>
           </div>
           <div style={{
             flex: 1, overflowY: 'auto', padding: 4,
@@ -336,15 +359,26 @@ function SlideJump({
                     minWidth: 20,
                     flexShrink: 0,
                   }}>
-                    {pad(i + 1)}
+                    {pad(i)}
                   </span>
                   <span style={{
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap',
+                    flex: 1,
                   }}>
                     {label}
                   </span>
+                  {SLIDE_DURATIONS[i] && (
+                    <span style={{
+                      fontVariantNumeric: 'tabular-nums',
+                      fontSize: 10,
+                      color: active ? 'rgba(254,147,57,0.7)' : 'rgba(255,255,255,0.25)',
+                      flexShrink: 0,
+                    }}>
+                      {SLIDE_DURATIONS[i]}
+                    </span>
+                  )}
                 </button>
               );
             })}

@@ -8,6 +8,7 @@ export interface ChatMessage {
 
 export function useClaude() {
   const [streaming, setStreaming] = useState(false);
+  const [waiting, setWaiting] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
 
   const chat = useCallback(async (
@@ -22,6 +23,7 @@ export function useClaude() {
     const controller = new AbortController();
     abortRef.current = controller;
     setStreaming(true);
+    setWaiting(true);
 
     const model = getModel(modelId);
     const endpoint = model.provider === 'salesforce' ? '/api/sf-models/chat' : '/api/claude/chat';
@@ -57,7 +59,10 @@ export function useClaude() {
           try {
             const parsed = JSON.parse(data);
             if (parsed.error) { onError(parsed.error); return; }
-            if (parsed.text) onChunk(parsed.text);
+            if (parsed.text) {
+              setWaiting(false);
+              onChunk(parsed.text);
+            }
           } catch {}
         }
       }
@@ -68,13 +73,15 @@ export function useClaude() {
       }
     } finally {
       setStreaming(false);
+      setWaiting(false);
     }
   }, []);
 
   const stop = useCallback(() => {
     abortRef.current?.abort();
     setStreaming(false);
+    setWaiting(false);
   }, []);
 
-  return { chat, stop, streaming };
+  return { chat, stop, streaming, waiting };
 }

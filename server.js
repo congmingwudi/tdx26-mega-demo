@@ -140,8 +140,13 @@ app.post('/api/sf-models/chat', async (req, res) => {
     'Content-Type': 'text/event-stream',
     'Cache-Control': 'no-cache',
     'Connection': 'keep-alive',
+    'X-Accel-Buffering': 'no',
   });
   res.flushHeaders();
+
+  // Send a waiting indicator immediately so the UI shows activity during the SF round-trip.
+  // SSE comment lines (: ...) are ignored by the EventSource parser but flush the connection.
+  res.write(': waiting for Salesforce Models API\n\n');
 
   try {
     const token = await getSfToken();
@@ -178,15 +183,12 @@ app.post('/api/sf-models/chat', async (req, res) => {
     // SF Models API returns: { generationDetails: { generations: [{ content: "..." }] } }
     const text = data?.generationDetails?.generations?.[0]?.content ?? data?.generations?.[0]?.content ?? data?.choices?.[0]?.message?.content ?? '';
 
-    // SF doesn't support streaming, so simulate it by emitting ~5 words at a time
-    // with a small delay and an explicit flush so the browser receives chunks progressively.
+    // Simulate streaming: emit 3 words at a time with no delay (response already waited 8s).
     const words = text.split(/(?<=\s)/);
-    const CHUNK_SIZE = 5;
+    const CHUNK_SIZE = 3;
     for (let i = 0; i < words.length; i += CHUNK_SIZE) {
       const chunk = words.slice(i, i + CHUNK_SIZE).join('');
       res.write(`data: ${JSON.stringify({ text: chunk })}\n\n`);
-      if (typeof res.flush === 'function') res.flush();
-      await new Promise(r => setTimeout(r, 12));
     }
 
     res.write('data: [DONE]\n\n');
