@@ -12,16 +12,16 @@ interface SlideLink {
 }
 
 const SLIDE_LINKS: Record<number, SlideLink[]> = {
-  // Slide 42 (index 41) — Resources
-  41: [
-    // bit.ly/tdx26-mega-demo
-    { href: 'https://bit.ly/tdx26-mega-demo', top: 20, left: 2, width: 25, height: 7 },
+  // Slide 43 (index 42) — Resources
+  42: [
+    // bit.ly/tdx26-mega-demo (top-left link + QR code area)
+    { href: 'https://bit.ly/tdx26-mega-demo', top: 10, left: 2, width: 38, height: 75 },
     // github.com/congmingwudi/tdx26-mega-demo
-    { href: 'https://github.com/congmingwudi/tdx26-mega-demo', top: 31, left: 48, width: 50, height: 7 },
+    { href: 'https://github.com/congmingwudi/tdx26-mega-demo', top: 28, left: 42, width: 55, height: 12 },
     // github.com/congmingwudi/patient360-glucose-monitor
-    { href: 'https://github.com/congmingwudi/patient360-glucose-monitor', top: 48, left: 48, width: 50, height: 7 },
+    { href: 'https://github.com/congmingwudi/patient360-glucose-monitor', top: 48, left: 42, width: 55, height: 12 },
     // linkedin.com/in/tadryancox
-    { href: 'https://linkedin.com/in/tadryancox', top: 81, left: 48, width: 40, height: 7 },
+    { href: 'https://linkedin.com/in/tadryancox', top: 72, left: 42, width: 45, height: 12 },
   ],
 };
 
