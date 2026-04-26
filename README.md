@@ -46,7 +46,11 @@ This project showcases a workflow that takes a static presentation and transform
 5. **Claude agent — Solution Guide panel + Kiosk mode (Claude Code)**
    - Added a **Solution Guide** chat drawer (press `C` or click the button in the control bar) — a streaming Q&A panel grounded in the current slide's narrative text plus the full presentation overview. The system prompt updates automatically as you navigate slides.
    - Added a **Kiosk mode** (`K`) — a full-screen Q&A overlay designed for conference booth self-serve, with suggested questions, a slide quick-jump menu, and a "New chat" button for resetting between visitors. The first suggested question is "How was this presentation itself built?" — prompting Claude to walk through the entire build story.
-   - Both features use the **Anthropic SDK** (`@anthropic-ai/sdk`) with `claude-opus-4-7` and streaming SSE. The Anthropic API key is kept server-side in the same Express server, proxied through `POST /api/claude/chat` — it never reaches the browser.
+   - Both features include a **model selector** with ~15 models grouped by provider: Claude via Salesforce (Bedrock-hosted Claude 3.5/3.7/Sonnet 4.6), OpenAI models via Salesforce, Google models via Salesforce, Amazon Nova models via Salesforce, and Claude Direct (Anthropic API). The default is **Claude Sonnet 4.6 via Salesforce** (`sfdc_ai__DefaultBedrockAnthropicClaude46Sonnet`).
+   - **Routing**: Salesforce model selections hit `POST /api/sf-models/chat` (Express proxy → Salesforce Models API via OAuth 2.0 Client Credentials), while Claude Direct hits `POST /api/claude/chat` (Anthropic SDK). All API keys and tokens stay server-side.
+   - **Tiered system prompts for latency**: The Salesforce Models API processes input tokens at ~1ms/token with no prompt caching. Sending the full 43-slide narrative (~3,000 tokens) caused ~13s response times. For Salesforce models, a compact ~300-token system prompt is used instead (just the demo summary + current slide context), reducing latency to ~9s. Claude Direct receives the full narrative prompt and responds in 1–3s. The model selector resets the chat when switched so the correct prompt tier is always used.
+   - **Simulated streaming for Salesforce models**: The Salesforce Models API returns a complete response (no SSE support). The proxy simulates progressive output by emitting 5 words at a time with a 12ms delay and explicit `res.flush()` calls, so the UI shows text appearing word-by-word rather than a blank wait followed by a wall of text.
+   - **Logging**: Every time a user opens the Solution Guide or Kiosk, a log event is sent with browser details (user agent, language, timezone, screen resolution, referrer) and the current slide number and title — same richness as the play event.
    - A custom **slide 42 — "App Architecture · How It Was Built"** was added to the deck (before Resources). It is a fully React-rendered slide — no background image — showing the build flow (5 steps) and runtime architecture as live HTML/CSS diagrams.
 
 ## Presentation app — build flow
@@ -85,9 +89,10 @@ flowchart TD
     end
 
     subgraph Agent["Step 5 · Claude Code — Claude Agent"]
-        ASKCLAUDE["Solution Guide panel\n• Slide-context Q&A\n• Streaming SSE\n• claude-opus-4-7"]
+        ASKCLAUDE["Solution Guide panel\n• Slide-context Q&A\n• Model selector\n• Tiered system prompts"]
         KIOSK["Kiosk mode\n• Full-screen booth Q&A\n• Suggested questions\n• New chat per visitor"]
         ARCHSLIDE["Slide 42 — App Architecture\n• Custom React-rendered slide\n• Build + runtime diagrams"]
+        MODSEL["Model Selector\n• ~15 models grouped by provider\n• Claude via Salesforce (default)\n• Claude Direct (Anthropic API)"]
     end
 
     PDF --> CD
@@ -104,12 +109,13 @@ flowchart TD
     SAM --> LAMBDA
     LAMBDA --> CW
     LAMBDA --> SLACK
-    AR -->|"POST /log\nplay · Solution Guide · Kiosk"| LAMBDA
+    AR -->|"POST /log\nplay · Solution Guide · Kiosk\n+ browser + slide detail"| LAMBDA
     CC --> ASKCLAUDE
     CC --> KIOSK
     CC --> ARCHSLIDE
-    ASKCLAUDE -->|"POST /api/claude/chat\nSSE stream"| AR
-    KIOSK -->|"POST /api/claude/chat\nSSE stream"| AR
+    CC --> MODSEL
+    ASKCLAUDE -->|"POST /api/sf-models/chat\nor /api/claude/chat"| AR
+    KIOSK -->|"POST /api/sf-models/chat\nor /api/claude/chat"| AR
 ```
 
 ## Presentation app — runtime architecture
@@ -119,14 +125,15 @@ How the deployed app handles a user session end-to-end:
 ```mermaid
 flowchart LR
     subgraph Browser["User's Browser"]
-        UI["React App\n• Slide deck · Narrative overlay\n• Autoplay controls\n• Solution Guide panel\n• Kiosk mode"]
+        UI["React App\n• Slide deck · Narrative overlay\n• Autoplay controls\n• Solution Guide panel\n• Kiosk mode · Model selector"]
     end
 
-    subgraph AppRunner["AWS App Runner · us-east-1"]
+    subgraph AppRunner["AWS App Runner · us-west-2"]
         EXPRESS["Express Server\nport 8080"]
         STATIC["Static Assets\ndist/ (React build +\nslide images)"]
         ELPROXY["ElevenLabs Proxy\nPOST /api/elevenlabs/tts\nAPI key never leaves server"]
         CLPROXY["Claude Proxy\nPOST /api/claude/chat\nSSE stream · key never leaves server"]
+        SFPROXY["Salesforce Models Proxy\nPOST /api/sf-models/chat\nOAuth token cached server-side\nSimulated SSE (word-chunked)"]
     end
 
     subgraph ElevenLabs["ElevenLabs"]
@@ -134,7 +141,12 @@ flowchart LR
     end
 
     subgraph Anthropic["Anthropic"]
-        CLAPI["claude-opus-4-7\nstreaming"]
+        CLAPI["Claude Direct\nclaude-opus-4-7\nstreaming · full system prompt"]
+    end
+
+    subgraph SalesforceOrg["Salesforce Org (same org as the demo)"]
+        OAUTH["OAuth 2.0\nClient Credentials\n/services/oauth2/token"]
+        SFMODELS["Salesforce Models API\napi.salesforce.com/einstein/platform/v1\n~15 models: Claude · GPT · Gemini · Nova\nCompact system prompt → lower latency"]
     end
 
     subgraph LoggingService["AWS Logging Service · us-west-2"]
@@ -153,10 +165,16 @@ flowchart LR
     ELPROXY -->|"xi-api-key header"| ELAPI
     ELAPI -->|"audio/mpeg"| ELPROXY
     ELPROXY -->|"audio blob"| UI
-    UI -->|"chat message"| CLPROXY
+    UI -->|"chat message\n(Claude Direct)"| CLPROXY
     CLPROXY -->|"x-api-key header"| CLAPI
     CLAPI -->|"SSE text chunks"| CLPROXY
     CLPROXY -->|"SSE stream"| UI
+    UI -->|"chat message\n(Salesforce model)"| SFPROXY
+    SFPROXY -->|"client_credentials grant"| OAUTH
+    OAUTH -->|"Bearer token\n(cached 29 min)"| SFPROXY
+    SFPROXY -->|"Bearer token\ncompact system prompt"| SFMODELS
+    SFMODELS -->|"full JSON response\n(no native SSE)"| SFPROXY
+    SFPROXY -->|"simulated SSE\n5 words / 12ms"| UI
     UI -->|"play · Solution Guide · Kiosk\n+ browser + slide detail"| APIGW
     UI -->|"voiceover error\n+ HTTP status"| APIGW
     APIGW --> LAMBDA
@@ -212,7 +230,8 @@ The voice-over web app itself is built with:
 - **Frontend**: React 19, TypeScript, Vite 8, Tailwind CSS v4, React Router v7
 - **Slide engine**: `<deck-stage>` custom element — keyboard/tap navigation, viewport scaling, localStorage persistence, print layout
 - **Voiceover**: ElevenLabs TTS API via server-side Express proxy, with presenter's cloned voice as default
-- **Claude agent**: Anthropic SDK (`@anthropic-ai/sdk`), `claude-opus-4-7`, streaming SSE via server-side Express proxy
+- **Claude agent**: Anthropic SDK (`@anthropic-ai/sdk`), `claude-opus-4-7`, streaming SSE via server-side Express proxy (`/api/claude/chat`)
+- **Salesforce Models API**: OAuth 2.0 Client Credentials → Bearer token (cached 29 min) → `api.salesforce.com/einstein/platform/v1/models/{id}/chat-generations` via Express proxy (`/api/sf-models/chat`); simulated SSE output since the API returns full JSON (no native streaming)
 - **Deployment**: Docker (Node 22 + Express), Amazon ECR, AWS App Runner
 
 ## Running locally
@@ -268,5 +287,5 @@ This demo is itself a showcase of AI-assisted development. Every component — f
 | **Presentation web app** | [Claude Design](https://claude.ai/design) + [Claude Code](https://claude.ai/code) | Claude Design prototyped the slide deck with narrative overlay; Claude Code converted it to a React app with ElevenLabs voiceover, autoplay, and deployed it to AWS |
 | **Voiceover narration** | [ElevenLabs](https://elevenlabs.io) | The default voice is a clone of the presenter's own voice — the demo literally narrates itself |
 | **AWS deployment** | [Claude Code](https://claude.ai/code) | Dockerized the app, pushed to ECR, and deployed to App Runner — all from the CLI in conversation |
-| **Logging & alerting** | [Claude Code](https://claude.ai/code) | Built a serverless Lambda logging API (SAM) that forwards play, Ask Claude, and Kiosk events (with browser + slide detail) and voiceover errors to CloudWatch and Slack `#logs` in real time |
-| **Solution Guide + Kiosk mode** | [Claude Code](https://claude.ai/code) | Built a streaming slide-context Q&A panel and a full-screen kiosk mode powered by `claude-opus-4-7` via a server-side Anthropic SDK proxy |
+| **Logging & alerting** | [Claude Code](https://claude.ai/code) | Built a serverless Lambda logging API (SAM) that forwards play, Solution Guide, and Kiosk events (with browser + slide detail) and voiceover errors to CloudWatch and Slack `#logs` in real time |
+| **Solution Guide + Kiosk mode** | [Claude Code](https://claude.ai/code) | Built a streaming slide-context Q&A panel and full-screen kiosk mode with a model selector supporting ~15 models via the Salesforce Models API (same org as the demo) and Claude Direct via Anthropic SDK — with tiered system prompts to manage token latency on the Salesforce path |
