@@ -165,6 +165,7 @@ export default function DeckStage() {
     12: 'arch-marketing.png',
     23: 'slackbot.png',
     24: 'update-patient-record.png',
+    40: 'this-presentation-app.png',
   };
 
   const slides = Array.from({ length: TOTAL_SLIDES }, (_, i) => {
