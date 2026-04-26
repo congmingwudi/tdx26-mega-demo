@@ -44,7 +44,7 @@ export function logAskClaude(slideIndex: number): void {
   post({
     source: 'mega-demo',
     level: 'info',
-    message: 'Ask Claude opened',
+    message: 'Solution Guide opened',
     detail: { ...slideDetail(slideIndex), ...browserDetail() },
   });
 }

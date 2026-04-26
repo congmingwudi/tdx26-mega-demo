@@ -103,7 +103,7 @@ function BuildFlow() {
     { n: '2', tool: 'Claude Code', action: 'React 19 + TS + Tailwind + ElevenLabs TTS', highlight: true },
     { n: '3', tool: 'Claude Code', action: 'Docker → Amazon ECR → AWS App Runner', highlight: true },
     { n: '4', tool: 'Claude Code', action: 'Lambda + API Gateway logging → CloudWatch + Slack', highlight: true },
-    { n: '5', tool: 'Claude Code', action: 'Ask Claude panel + Kiosk mode (this chat!)', highlight: true },
+    { n: '5', tool: 'Claude Code', action: 'Solution Guide panel + Kiosk mode (this chat!)', highlight: true },
   ];
 
   return (
@@ -165,7 +165,7 @@ function RuntimeArch() {
             Slide deck<br />
             Narrative overlay<br />
             Autoplay controls<br />
-            Ask Claude panel<br />
+            Solution Guide panel<br />
             Kiosk mode
           </div>
         </div>

@@ -2,10 +2,16 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useClaude, type ChatMessage } from '../hooks/useClaude';
 import { NARRATIVE } from '../data/narrative-data';
 import { SLIDE_LABELS, TOTAL_SLIDES } from '../data/slides';
+import { DEFAULT_MODEL, getModel } from '../data/models';
+import ModelSelector from './ModelSelector';
 
 const CLAUDE_ORANGE = '#FF6B35';
 
-function buildKioskSystemPrompt(): string {
+const KIOSK_COMPACT = `You are a friendly Salesforce solutions architect staffing the Data 360 Campground booth at TDX '26. Answer questions about the System of Context Mega Demo: a healthcare scenario where a patient's glucose monitor triggers Salesforce Data 360's real-time data graph → Agentforce Care Agent (Slack alerts, appointment scheduling, EHR updates via MuleSoft MCP Server) → Tableau Next dashboards grounded by Data 360 semantic model → Data 360 Agent segments for Marketing Cloud Next. Informatica MDM resolves the patient golden record. Governed by PHI/HIPAA tagging and Shield Platform Encryption. This web app was built with Claude Design + Claude Code + ElevenLabs voice clone, deployed to AWS App Runner. Be specific, enthusiastic, and concise (3–5 sentences). Don't discuss pricing or availability — direct those to the booth team.`;
+
+function buildKioskSystemPrompt(compact = false): string {
+  if (compact) return KIOSK_COMPACT;
+
   const slideOverview = NARRATIVE.map((e, i) =>
     `Slide ${i + 1} — ${e.title} [${e.phase} / ${e.beat}]: ${e.sections.filter(s => s.kind === 'say').map(s => s.text).join(' ')}`
   ).join('\n\n');
@@ -75,10 +81,10 @@ export default function KioskMode({
 }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
+  const [modelId, setModelId] = useState(DEFAULT_MODEL.id);
   const { chat, stop, streaming } = useClaude();
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const systemPrompt = useRef(buildKioskSystemPrompt());
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -112,9 +118,11 @@ export default function KioskMode({
 
     setMessages(prev => [...prev, { role: 'assistant', content: '', streaming: true }]);
 
+    const compact = getModel(modelId).provider === 'salesforce';
     chat(
       history,
-      systemPrompt.current,
+      buildKioskSystemPrompt(compact),
+      modelId,
       (chunk) => {
         setMessages(prev => {
           const copy = [...prev];
@@ -187,12 +195,15 @@ export default function KioskMode({
         <KioskLogo />
         <div style={{ flex: 1 }}>
           <div style={{ fontWeight: 800, fontSize: 16, color: '#fff', letterSpacing: '-0.01em' }}>
-            Ask Claude about this demo
+            Solution Guide
           </div>
           <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 1 }}>
-            Powered by Claude · TDX '26 System of Context Mega Demo
+            TDX '26 System of Context Mega Demo
           </div>
         </div>
+
+        {/* Model selector */}
+        <ModelSelector modelId={modelId} onChange={id => { setModelId(id); setMessages([]); }} />
 
         {/* Slide quick-jump */}
         <SlideSelector onGoToSlide={(i) => { onGoToSlide(i); onClose(); }} />
@@ -410,10 +421,10 @@ function WelcomeScreen({ onAsk }: { onAsk: (q: string) => void }) {
     <div style={{ maxWidth: 640, margin: '40px auto', textAlign: 'center' }}>
       <KioskLogo size={48} style={{ margin: '0 auto 20px' }} />
       <h2 style={{ fontWeight: 800, fontSize: 22, color: '#fff', margin: '0 0 8px', letterSpacing: '-0.02em' }}>
-        Hi, I'm Claude
+        Solution Guide
       </h2>
       <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: 14, lineHeight: 1.6, margin: '0 0 32px' }}>
-        I'm an AI assistant grounded in this entire demo. Ask me anything — how the technology works,
+        Ask me anything about this demo — how the technology works,
         why specific design choices were made, or how you'd implement this at your company.
       </p>
       <div style={{

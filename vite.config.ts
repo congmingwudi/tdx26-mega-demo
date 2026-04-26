@@ -108,7 +108,7 @@ function claudeProxy(): Plugin {
         req.on('data', (c: Buffer) => chunks.push(c));
         req.on('end', async () => {
           const body = JSON.parse(Buffer.concat(chunks).toString());
-          const { messages, systemPrompt } = body;
+          const { messages, systemPrompt, modelId } = body;
 
           res.setHeader('Content-Type', 'text/event-stream');
           res.setHeader('Cache-Control', 'no-cache');
@@ -116,7 +116,7 @@ function claudeProxy(): Plugin {
 
           try {
             const stream = anthropic!.messages.stream({
-              model: 'claude-opus-4-7',
+              model: modelId || 'claude-opus-4-7',
               max_tokens: 1024,
               system: systemPrompt || 'You are a helpful assistant.',
               messages,
@@ -138,6 +138,109 @@ function claudeProxy(): Plugin {
   };
 }
 
+function sfModelsProxy(): Plugin {
+  let sfClientId = '';
+  let sfClientSecret = '';
+  let sfDomain = '';
+  let sfToken = '';
+  let sfTokenExpiry = 0;
+
+  async function getToken() {
+    if (sfToken && Date.now() < sfTokenExpiry) return sfToken;
+    const resp = await fetch(`${sfDomain}/services/oauth2/token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'client_credentials',
+        client_id: sfClientId,
+        client_secret: sfClientSecret,
+      }),
+    });
+    if (!resp.ok) throw new Error(`SF OAuth failed: ${resp.status}`);
+    const data = await resp.json() as { access_token: string };
+    sfToken = data.access_token;
+    sfTokenExpiry = Date.now() + 29 * 60 * 1000;
+    return sfToken;
+  }
+
+  return {
+    name: 'sf-models-proxy',
+    configResolved(config) {
+      const env = loadEnv(config.mode, config.root, '');
+      sfClientId = env.SF_CLIENT_ID || '';
+      sfClientSecret = env.SF_CLIENT_SECRET || '';
+      sfDomain = env.SF_DOMAIN || '';
+      if (!sfClientId) console.warn('[sf-models-proxy] SF_CLIENT_ID not set — Salesforce models disabled');
+    },
+    configureServer(server) {
+      server.middlewares.use('/api/sf-models', async (req, res, next) => {
+        if (req.url !== '/chat' || req.method !== 'POST') { next(); return; }
+
+        if (!sfClientId || !sfClientSecret || !sfDomain) {
+          res.statusCode = 503;
+          res.end(JSON.stringify({ error: 'Salesforce Models API credentials not configured' }));
+          return;
+        }
+
+        const chunks: Buffer[] = [];
+        req.on('data', (c: Buffer) => chunks.push(c));
+        req.on('end', async () => {
+          const body = JSON.parse(Buffer.concat(chunks).toString());
+          const { messages, systemPrompt, modelId } = body;
+
+          res.setHeader('Content-Type', 'text/event-stream');
+          res.setHeader('Cache-Control', 'no-cache');
+          res.setHeader('Connection', 'keep-alive');
+
+          try {
+            const token = await getToken();
+            const allMessages = [
+              ...(systemPrompt ? [{ role: 'system', content: systemPrompt }] : []),
+              ...messages,
+            ];
+
+            const sfResp = await fetch(
+              `https://api.salesforce.com/einstein/platform/v1/models/${modelId}/chat-generations`,
+              {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json',
+                  'x-sfdc-app-context': 'EinsteinGPT',
+                  'x-client-feature-id': 'ai-platform-models-connected-app',
+                },
+                body: JSON.stringify({ messages: allMessages }),
+              },
+            );
+
+            if (!sfResp.ok) {
+              const errText = await sfResp.text();
+              res.write(`data: ${JSON.stringify({ error: `SF Models API error (${sfResp.status}): ${errText}` })}\n\n`);
+              res.end();
+              return;
+            }
+
+            const data = await sfResp.json() as { generationDetails?: { generations: { content: string }[] }; generations?: { content: string }[]; choices?: { message: { content: string } }[] };
+            const text = data?.generationDetails?.generations?.[0]?.content ?? data?.generations?.[0]?.content ?? data?.choices?.[0]?.message?.content ?? '';
+            const words = text.split(/(?<=\s)/);
+            const CHUNK_SIZE = 5;
+            for (let i = 0; i < words.length; i += CHUNK_SIZE) {
+              const chunk = words.slice(i, i + CHUNK_SIZE).join('');
+              res.write(`data: ${JSON.stringify({ text: chunk })}\n\n`);
+              if (typeof (res as any).flush === 'function') (res as any).flush();
+              await new Promise(r => setTimeout(r, 12));
+            }
+            res.write('data: [DONE]\n\n');
+          } catch (err: unknown) {
+            res.write(`data: ${JSON.stringify({ error: (err as Error)?.message ?? 'SF Models API error' })}\n\n`);
+          }
+          res.end();
+        });
+      });
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [react(), tailwindcss(), elevenLabsProxy(), claudeProxy()],
+  plugins: [react(), tailwindcss(), elevenLabsProxy(), claudeProxy(), sfModelsProxy()],
 })

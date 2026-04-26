@@ -1,16 +1,26 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useClaude, type ChatMessage } from '../hooks/useClaude';
 import { NARRATIVE } from '../data/narrative-data';
+import { DEFAULT_MODEL, getModel } from '../data/models';
+import ModelSelector from './ModelSelector';
 
 const CLAUDE_ORANGE = '#FF6B35';
 const CLAUDE_GRADIENT = 'linear-gradient(135deg, #FF6B35 0%, #FF9A5C 100%)';
 
-function buildSystemPrompt(slideIndex: number): string {
+const DEMO_CORE = `TDX '26 System of Context Mega Demo — Agentic Health Enterprise Architecture. A patient's glucose monitor triggers real-time events through Salesforce Data 360's real-time data graph → Agentforce Care Agent (Slack alerts, appointment scheduling, EHR updates via MuleSoft MCP Server) → Tableau Next dashboards grounded by Data 360 semantic model → Data 360 Agent segments patients for Marketing Cloud Next outreach. Informatica MDM resolves the patient golden record. All governed by Data 360 PHI/HIPAA tagging and Shield Platform Encryption. Built with Claude Design + Claude Code, narrated by ElevenLabs voice clone, deployed to AWS App Runner.`;
+
+function buildSystemPrompt(slideIndex: number, compact = false): string {
   const entry = NARRATIVE[slideIndex];
   const sayLines = entry?.sections
     .filter(s => s.kind === 'say')
     .map(s => s.text)
     .join(' ') ?? '';
+
+  const slideCtx = `Current slide ${slideIndex + 1} — ${entry?.title ?? ''} (${entry?.phase ?? ''} / ${entry?.beat ?? ''}): ${sayLines}`;
+
+  if (compact) {
+    return `You are a knowledgeable Salesforce solutions architect answering questions about the ${DEMO_CORE}\n\n${slideCtx}\n\nBe specific and concise (2–4 sentences). Answer from the demo context above.`;
+  }
 
   const allSay = NARRATIVE.map((e, i) =>
     `Slide ${i + 1} (${e.title}): ${e.sections.filter(s => s.kind === 'say').map(s => s.text).join(' ')}`
@@ -47,6 +57,7 @@ export default function AskClaude({
 }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
+  const [modelId, setModelId] = useState(DEFAULT_MODEL.id);
   const { chat, stop, streaming } = useClaude();
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -78,11 +89,13 @@ export default function AskClaude({
 
     setMessages(prev => [...prev, { role: 'assistant', content: '', streaming: true }]);
 
-    const systemPrompt = buildSystemPrompt(slideIndex);
+    const compact = getModel(modelId).provider === 'salesforce';
+    const systemPrompt = buildSystemPrompt(slideIndex, compact);
 
     chat(
       history,
       systemPrompt,
+      modelId,
       (chunk) => {
         setMessages(prev => {
           const copy = [...prev];
@@ -163,7 +176,7 @@ export default function AskClaude({
       }}>
         <ClaudeLogo size={22} />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontWeight: 700, fontSize: 13, color: '#fff' }}>Ask Claude</div>
+          <div style={{ fontWeight: 700, fontSize: 13, color: '#fff' }}>Solution Guide</div>
           <div style={{
             fontSize: 10,
             color: 'rgba(255,255,255,0.35)',
@@ -172,6 +185,7 @@ export default function AskClaude({
             whiteSpace: 'nowrap',
           }}>{slideName}</div>
         </div>
+        <ModelSelector modelId={modelId} onChange={id => { setModelId(id); setMessages([]); }} />
         <button
           onClick={onClose}
           style={{

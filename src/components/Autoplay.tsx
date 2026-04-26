@@ -178,7 +178,7 @@ export default function Autoplay({
       {/* Ask Claude button */}
       <button
         onClick={onAskClaude}
-        title="Ask Claude about this slide (C)"
+        title="Solution Guide (C)"
         style={{
           ...btnStyle,
           padding: '0 10px',
@@ -190,7 +190,7 @@ export default function Autoplay({
         }}
       >
         <ClaudeIcon active={askClaudeOpen} />
-        <span>Ask Claude</span>
+        <span>Solution Guide</span>
       </button>
 
       {/* Kiosk mode button */}

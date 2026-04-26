@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
+import { getModel } from '../data/models';
 
 export interface ChatMessage {
   role: 'user' | 'assistant';
@@ -12,6 +13,7 @@ export function useClaude() {
   const chat = useCallback(async (
     messages: ChatMessage[],
     systemPrompt: string,
+    modelId: string,
     onChunk: (text: string) => void,
     onDone: () => void,
     onError: (msg: string) => void,
@@ -21,11 +23,14 @@ export function useClaude() {
     abortRef.current = controller;
     setStreaming(true);
 
+    const model = getModel(modelId);
+    const endpoint = model.provider === 'salesforce' ? '/api/sf-models/chat' : '/api/claude/chat';
+
     try {
-      const res = await fetch('/api/claude/chat', {
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages, systemPrompt }),
+        body: JSON.stringify({ messages, systemPrompt, modelId }),
         signal: controller.signal,
       });
 
